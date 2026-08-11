@@ -9,18 +9,6 @@ import pytz
 # --- 페이지 기본 설정 ---
 st.set_page_config(page_title="KIOST 사내 카페", page_icon="☕", layout="centered")
 
-# 🎨 [핵심] PC에서도 모바일처럼 컬럼을 무조건 세로(1열)로 쌓이게 만드는 CSS 설정
-st.markdown("""
-    <style>
-    /* 스트림릿의 가로 컬럼 레이아웃을 모바일처럼 세로 정렬로 강제 변경 */
-    [data-testid="column"] {
-        width: 100% !important;
-        flex: 1 1 100% !important;
-        min-width: 100% !important;
-    }
-    </style>
-""", unsafe_allow_html=True)
-
 # 1. 구글 시트 연동 및 시간 설정
 scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
 creds_dict = json.loads(st.secrets["gcp_service_account"])
@@ -32,7 +20,7 @@ sheet = doc.sheet1
 # 한국 시간 가져오기
 tz = pytz.timezone('Asia/Seoul')
 now = datetime.now(tz)
-is_weekday = now.weekday() < 5 
+is_weekday = now.weekday() < 5 # 0:월 ~ 4:금
 is_opening_hours = 10 <= now.hour < 16
 
 try:
@@ -41,24 +29,28 @@ except:
     current_stock = 0
 
 # ==========================================
-# UI 상단: 비율이 딱 맞는 3분할 갤러리 🖼️
+# UI 상단: 요청하신 광안대교 이미지 3분할 갤러리 🖼️
 # ==========================================
-st.markdown("<h3 style='text-align: center; color: #0077B6;'>🌉 광안대교 야경 갤러리</h3>", unsafe_layout_html=True) # type: ignore
+st.markdown("<h3 style='text-align: center; color: #0077B6;'>🌉 KIOST Summer 사내 카페 🧊</h3>", unsafe_allow_html=True)
 
+# 화면을 3칸(액자 3개)으로 나누기
 frame1, frame2, frame3 = st.columns(3)
 
+# 지정해주신 이미지 링크를 똑같이 적용하되, 세로 비율을 맞춰 깔끔하게 정돈
+img_url = "https://tnnews.co.kr/wp-content/uploads/2023/03/30-3-630x420.jpg"
+
 with frame1:
-    # &w=400&h=500&fit=crop : 가로 400, 세로 500 크기로 깔끔하게 잘라서 보여줌
-    st.image("https://tnnews.co.kr/wp-content/uploads/2023/03/10-3.jpg?auto=format&fit=crop&w=400&h=500&q=80", use_container_width=True)
+    st.image(img_url, use_container_width=True)
 
 with frame2:
-    st.image("https://tnnews.co.kr/wp-content/uploads/2023/03/10-3.jpg?auto=format&fit=crop&w=400&h=500&q=80", use_container_width=True)
+    st.image(img_url, use_container_width=True)
 
 with frame3:
-    st.image("https://tnnews.co.kr/wp-content/uploads/2023/03/10-3.jpg?auto=format&fit=crop&w=400&h=500&q=80", use_container_width=True)
+    st.image(img_url, use_container_width=True)
 
-st.markdown("<p style='text-align: center; color: #0096C7; font-weight: bold;'>시원한 바다와 야경을 감상해보세요! ✨</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: #0096C7; font-weight: bold;'>시원한 아이스 아메리카노와 함께 활기찬 여름 보내세요! 🌴</p>", unsafe_allow_html=True)
 st.divider()
+
 # ==========================================
 # 탭(Tab) 메뉴로 깔끔하게 화면 분리하기 📱
 # ==========================================
