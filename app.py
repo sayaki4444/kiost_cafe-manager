@@ -70,18 +70,18 @@ if admin_pw == "0000":
     st.sidebar.divider()
     
     col_btn1, col_btn2, col_btn3 = st.sidebar.columns(3)
-    if col_btn1.button("-1잔"):
-        new_stock = max(0, current_stock - 1)
+    if col_btn1.button("-5잔"):
+        new_stock = max(0, current_stock - 5)
         sheet.update_acell('B1', new_stock)
         st.rerun() 
         
-    if col_btn2.button("-5잔"):
-        new_stock = max(0, current_stock - 5)
+    if col_btn2.button("-10잔"):
+        new_stock = max(0, current_stock - 10)
         sheet.update_acell('B1', new_stock)
         st.rerun()
 
-    if col_btn3.button("-10잔"):
-        new_stock = max(0, current_stock - 10)
+    if col_btn3.button("-20잔"):
+        new_stock = max(0, current_stock - 20)
         sheet.update_acell('B1', new_stock)
         st.rerun() 
         
