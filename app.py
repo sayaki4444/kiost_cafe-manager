@@ -29,10 +29,11 @@ except:
     current_stock = 0
 
 # ==========================================
-# UI 1. 메인 화면 (자동 마감 및 3단계 상태)
+# UI 1. 메인 화면 (여름 컨셉으로 화사하게 변경 🌊)
 # ==========================================
-st.markdown("<h1 style='text-align: center; color: #4B3832;'>☕ KIOST 사내 카페</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; color: #888888;'>오늘의 커피 현황을 알려드려요</p>", unsafe_allow_html=True)
+# 시원한 바다 블루(#0077B6) 컬러와 여름 감성 타이틀
+st.markdown("<h1 style='text-align: center; color: #0077B6;'>🌊 KIOST Summer 사내 카페 🧊</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: #0096C7; font-weight: bold;'>시원한 아이스 아메리카노와 함께 활기찬 여름 보내세요! 🌴</p>", unsafe_allow_html=True)
 st.divider()
 
 if not is_weekday or not is_opening_hours:
@@ -87,7 +88,7 @@ try:
     sheet_guest = doc.worksheet("방명록")
     
     with st.form("guestbook_form", clear_on_submit=True):
-        new_comment = st.text_input("메뉴 건의나 응원의 한마디를 남겨주세요!", placeholder="예: 내일은 라떼가 땡기네요~")
+        new_comment = st.text_input("메뉴 건의나 응원의 한마디를 남겨주세요!", placeholder="예: 시원한 콜드브루도 들어오면 좋겠어요!")
         submitted = st.form_submit_button("등록하기")
         
         if submitted and new_comment:
@@ -121,7 +122,7 @@ except:
     pass
 
 # ==========================================
-# UI 5. 카페 관리자용 화면 (사이드바 - 상태 변경 버튼형)
+# UI 5. 카페 관리자용 화면 (사이드바)
 # ==========================================
 st.sidebar.title("🔐 관리자 메뉴")
 admin_pw = st.sidebar.text_input("비밀번호를 입력하세요", type="password")
@@ -129,7 +130,6 @@ admin_pw = st.sidebar.text_input("비밀번호를 입력하세요", type="passwo
 if admin_pw == "0000":
     st.sidebar.success("인증 완료")
     
-    # 현재 상태를 글자로 보여주기
     if current_stock > 30:
         current_status_text = "🟢 여유 있어요"
     elif current_stock > 0:
@@ -142,15 +142,14 @@ if admin_pw == "0000":
     
     st.sidebar.markdown("### 🛠️ 상태 변경하기")
     
-    # 3가지 상태 버튼을 세로로 꽉 차게 배치
     if st.sidebar.button("🟢 1단계: 여유 있어요로 변경", use_container_width=True):
-        sheet.update_acell('B1', 200) # 200을 저장하여 여유 상태로 만듦
+        sheet.update_acell('B1', 200)
         st.rerun()
         
     if st.sidebar.button("🟡 2단계: 마감 임박으로 변경", use_container_width=True):
-        sheet.update_acell('B1', 15) # 15를 저장하여 마감 임박 상태로 만듦
+        sheet.update_acell('B1', 15)
         st.rerun()
         
     if st.sidebar.button("🔴 3단계: 즉시 마감하기", use_container_width=True):
-        sheet.update_acell('B1', 0) # 0을 저장하여 마감 상태로 만듦
+        sheet.update_acell('B1', 0)
         st.rerun()
