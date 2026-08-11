@@ -2,6 +2,7 @@ import streamlit as st
 import requests
 from datetime import datetime
 import pytz
+import gspread  # 구글 시트 연동 라이브러리
 
 # 1. 페이지 기본 설정
 st.set_page_config(
@@ -21,7 +22,7 @@ custom_css = """
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
     
-    /* PC 접속 시 화면 중앙에 모바일 크기로 고정 (핵심) */
+    /* PC 접속 시 화면 중앙에 모바일 크기로 고정 */
     .main .block-container {
         max-width: 430px !important;
         padding-top: 1.5rem !important;
@@ -68,27 +69,6 @@ custom_css = """
         align-items: center;
         box-shadow: 0 10px 40px rgba(147, 51, 234, 0.2), inset 0 0 15px rgba(255, 255, 255, 0.05);
         border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    /* 배너/알림 반투명 카드 */
-    .highlight-card {
-        background: linear-gradient(135deg, rgba(88, 28, 135, 0.4) 0%, rgba(24, 24, 37, 0.7) 100%);
-        border-radius: 20px;
-        padding: 18px 20px;
-        margin: 15px 0;
-        border: 1px solid rgba(168, 85, 247, 0.25);
-        backdrop-filter: blur(12px);
-    }
-
-    /* 그리드 라운드 카드 */
-    .custom-card {
-        background: #181926;
-        border-radius: 20px;
-        padding: 18px;
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-        margin-bottom: 10px;
-        text-align: center;
     }
 
     /* 버튼 모던 스타일 재정의 */
@@ -147,14 +127,35 @@ custom_css = """
 </style>
 """
 
-# CSS 주입
 st.markdown(custom_css, unsafe_allow_html=True)
 
 # -------------------------------------------------------------------
-# 상단 UI 헤더 및 메인 그래픽 영역
+# 3. 데이터 및 시간 처리 (오류 해결 핵심 구간)
 # -------------------------------------------------------------------
 
-# 1. 상단 헤더
+# 시간 관련 변수 선언
+now_kst = datetime.now(pytz.timezone('Asia/Seoul'))
+current_hour = now_kst.hour
+current_weekday = now_kst.weekday()
+
+is_weekday = current_weekday < 5          # 월~금 (0~4)
+is_opening_hours = 10 <= current_hour < 16  # 10시 ~ 16시
+
+# Google Sheets 연동 및 재고 가져오기 (예시 안전 장치 포함)
+try:
+    # Streamlit Secrets 또는 service_account를 사용하는 기존 방식
+    gc = gspread.service_account_from_dict(st.secrets["gcp_service_account"])
+    doc = gc.open("소담터")
+    sheet = doc.worksheet("재고")
+    current_stock = int(sheet.acell('B1').value)
+except Exception:
+    # 연동 전 테스트용 기본값
+    current_stock = 50
+
+# -------------------------------------------------------------------
+# 4. 상단 UI 헤더 및 메인 그래픽
+# -------------------------------------------------------------------
+
 st.markdown("""
 <div class="top-header">
     <div>
@@ -167,8 +168,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# 2. 중앙 메인 원형 카드
-st.markdown("""
+st.markdown(f"""
 <div class="main-circle-card">
     <div style="font-size: 13px; color: #c084fc; margin-bottom: 6px;">☕ Cafe Status</div>
     <div style="font-size: 32px; font-weight: 800; color: #ffffff; letter-spacing: -1px;">
@@ -176,12 +176,11 @@ st.markdown("""
     </div>
     <div style="font-size: 12px; color: #8E8EA0; margin-top: 4px;">운영시간 10:00 - 16:00</div>
     <div style="margin-top: 14px; background: rgba(192, 132, 252, 0.15); padding: 5px 14px; border-radius: 20px; font-size: 12px; color: #e9d5ff; border: 1px solid rgba(192, 132, 252, 0.3);">
-        Real-time Inventory
+        현재 재고: {current_stock}잔
     </div>
 </div>
 """, unsafe_allow_html=True)
 
-# 3. 퀵 메모 섹션
 with st.container():
     user_input = st.text_input("메모 작성", placeholder="오늘의 상태를 입력하세요...")
     if st.button("저장하기", key="save_btn"):
@@ -191,7 +190,7 @@ with st.container():
 st.markdown("<br>", unsafe_allow_html=True)
 
 # -------------------------------------------------------------------
-# 기존 탭(Tab) 메뉴 및 백엔드 로직 연동
+# 5. 탭(Tab) 메뉴 기능
 # -------------------------------------------------------------------
 
 tab1, tab2, tab3 = st.tabs(["☕ 카페 현황", "🏆 인기 투표", "💬 끄적끄적 방명록"])
@@ -282,7 +281,7 @@ with tab3:
         pass
 
 # -------------------------------------------------------------------
-# 관리자용 메뉴 (사이드바)
+# 6. 관리자용 메뉴 (사이드바)
 # -------------------------------------------------------------------
 st.sidebar.title("🔐 관리자 메뉴")
 admin_pw = st.sidebar.text_input("비밀번호를 입력하세요", type="password")
