@@ -200,9 +200,9 @@ with tab1:
     st.markdown("<br>", unsafe_allow_html=True)
     
     if not is_weekday or not is_opening_hours:
-        st.error("### 🌙 운영 시간 외\n사내 카페 운영 시간은 **평일 10:00 ~ 16:00** 입니다.\n내일 영업 시간에 만나요! ☕")
+        st.error("### 🌙 금일 마감\n사내 카페 운영 시간은 **평일 10:00 ~ 16:00** 입니다.\n내일 영업 시간에 만나요! ☕")
     elif current_stock > 30:
-        st.success("### 🟢 여유 있어요!\n맛있는 커피가 넉넉하게 준비되어 있습니다. 천천히 오세요~ ☕")
+        st.success("### 🟢 언제든 오세요!\n맛있는 커피가 넉넉하게 준비되어 있습니다. 천천히 오세요~ ☕")
     elif current_stock > 0:
         st.warning("### 🟡 마감 임박!\n오늘 준비된 커피가 얼마 남지 않았어요. 조금만 서둘러 주세요! 🏃‍♂️")
     else:
