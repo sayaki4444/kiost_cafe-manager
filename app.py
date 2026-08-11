@@ -31,7 +31,8 @@ except:
 # ==========================================
 # UI 상단: 시원한 여름 카페 배너 이미지 🖼️
 # ==========================================
-st.image("https://images.unsplash.com/photo-1517256064527-09c73fc73e38?auto=format&fit=crop&w=1000&q=80", use_column_width=True)
+# use_column_width 대신 use_container_width로 수정 완료!
+st.image("https://images.unsplash.com/photo-1517256064527-09c73fc73e38?auto=format&fit=crop&w=1000&q=80", use_container_width=True)
 
 st.markdown("<h2 style='text-align: center; color: #0077B6;'>🌊 KIOST Summer 사내 카페 🧊</h2>", unsafe_allow_html=True)
 st.markdown("<p style='text-align: center; color: #0096C7; font-weight: bold;'>시원한 아이스 아메리카노와 함께 활기찬 여름 보내세요! 🌴</p>", unsafe_allow_html=True)
@@ -46,7 +47,6 @@ tab1, tab2, tab3 = st.tabs(["☕ 카페 현황", "🏆 인기 투표", "💬 끄
 with tab1:
     st.markdown("<br>", unsafe_allow_html=True)
     
-    # 상태 메시지를 눈에 띄는 박스 형태로 제공
     if not is_weekday or not is_opening_hours:
         st.error("### 🌙 운영 시간 외\n사내 카페 운영 시간은 **평일 10:00 ~ 16:00** 입니다.\n내일 영업 시간에 만나요! ☕")
     elif current_stock > 30:
@@ -58,7 +58,6 @@ with tab1:
         
     st.markdown("<br><br>", unsafe_allow_html=True)
     
-    # 하단 날씨 정보 카드
     try:
         weather_req = requests.get("https://wttr.in/Busan?format=%c+%t&m", timeout=3)
         if weather_req.status_code == 200:
