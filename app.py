@@ -49,13 +49,13 @@ frame1, frame2, frame3 = st.columns(3)
 
 with frame1:
     # &w=400&h=500&fit=crop : 가로 400, 세로 500 크기로 깔끔하게 잘라서 보여줌
-    st.image("https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=400&h=500&q=80", use_container_width=True)
+    st.image("https://tnnews.co.kr/wp-content/uploads/2023/03/10-3.jpg?auto=format&fit=crop&w=400&h=500&q=80", use_container_width=True)
 
 with frame2:
-    st.image("https://images.unsplash.com/photo-1511739001486-6bfe10ce785f?auto=format&fit=crop&w=400&h=500&q=80", use_container_width=True)
+    st.image("https://tnnews.co.kr/wp-content/uploads/2023/03/10-3.jpg?auto=format&fit=crop&w=400&h=500&q=80", use_container_width=True)
 
 with frame3:
-    st.image("https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=400&h=500&q=80", use_container_width=True)
+    st.image("https://tnnews.co.kr/wp-content/uploads/2023/03/10-3.jpg?auto=format&fit=crop&w=400&h=500&q=80", use_container_width=True)
 
 st.markdown("<p style='text-align: center; color: #0096C7; font-weight: bold;'>시원한 바다와 야경을 감상해보세요! ✨</p>", unsafe_allow_html=True)
 st.divider()
