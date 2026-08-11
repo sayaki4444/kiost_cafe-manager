@@ -9,6 +9,18 @@ import pytz
 # --- 페이지 기본 설정 ---
 st.set_page_config(page_title="KIOST 사내 카페", page_icon="☕", layout="centered")
 
+# 🎨 [핵심] PC에서도 모바일처럼 컬럼을 무조건 세로(1열)로 쌓이게 만드는 CSS 설정
+st.markdown("""
+    <style>
+    /* 스트림릿의 가로 컬럼 레이아웃을 모바일처럼 세로 정렬로 강제 변경 */
+    [data-testid="column"] {
+        width: 100% !important;
+        flex: 1 1 100% !important;
+        min-width: 100% !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 # 1. 구글 시트 연동 및 시간 설정
 scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
 creds_dict = json.loads(st.secrets["gcp_service_account"])
@@ -20,37 +32,33 @@ sheet = doc.sheet1
 # 한국 시간 가져오기
 tz = pytz.timezone('Asia/Seoul')
 now = datetime.now(tz)
-is_weekday = now.weekday() < 5 # 0:월 ~ 4:금
+is_weekday = now.weekday() < 5 
 is_opening_hours = 10 <= now.hour < 16
 
 try:
     current_stock = int(sheet.acell('B1').value)
 except:
     current_stock = 0
-    
-# ==========================================
-# UI 상단: 광안대교 3분할 액자 느낌의 배너 🖼️
-# ==========================================
-st.markdown("<h3 style='text-align: center; color: #0077B6;'>🌉 광안대교 야경 3분할 액자갤러리</h3>", unsafe_allow_html=True)
 
-# 화면을 3칸(액자 3개)으로 나누기
+# ==========================================
+# UI 상단: 3분할 액자 느낌의 이미지 🖼️ (PC에서도 세로로 나옴!)
+# ==========================================
+st.markdown("<h3 style='text-align: center; color: #0077B6;'>🌉 광안대교 야경 액자 갤러리</h3>", unsafe_allow_html=True)
+
+# 기존에 3칸으로 나눴던 부분 (이제 PC에서도 모바일처럼 위아래로 세로 정렬됩니다)
 frame1, frame2, frame3 = st.columns(3)
 
 with frame1:
-    # 왼쪽 액자 이미지 (광안대교 왼쪽 부분)
-    st.image("https://tnnews.co.kr/wp-content/uploads/2023/03/20-4-696x463.jpg?auto=format&fit=crop&w=400&q=80", use_container_width=True)
+    st.image("https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80", use_container_width=True)
 
 with frame2:
-    # 가운데 액자 이미지 (광안대교 중앙 부분)
-    st.image("https://tnnews.co.kr/wp-content/uploads/2023/03/20-4-696x463.jpg?auto=format&fit=crop&w=400&q=80", use_container_width=True)
+    st.image("https://images.unsplash.com/photo-1511739001486-6bfe10ce785f?auto=format&fit=crop&w=600&q=80", use_container_width=True)
 
 with frame3:
-    # 오른쪽 액자 이미지 (광안대교 오른쪽 부분)
-    st.image("https://tnnews.co.kr/wp-content/uploads/2023/03/20-4-696x463.jpg?auto=format&fit=crop&w=400&q=80", use_container_width=True)
+    st.image("https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=600&q=80", use_container_width=True)
 
 st.markdown("<p style='text-align: center; color: #0096C7; font-weight: bold;'>시원한 바다와 야경을 감상해보세요! ✨</p>", unsafe_allow_html=True)
 st.divider()
-
 # ==========================================
 # 탭(Tab) 메뉴로 깔끔하게 화면 분리하기 📱
 # ==========================================
