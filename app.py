@@ -28,7 +28,7 @@ st.markdown("<p style='text-align: center; color: #888888;'>오늘의 커피 현
 st.divider()
 
 # 숫자를 숨기고 3단계 '신호등' 상태로 보여주기
-if current_stock > 50:
+if current_stock > 30:
     # 50잔 초과일 때: 넉넉함
     st.success("### 🟢 여유 있어요!\n맛있는 커피가 넉넉하게 준비되어 있습니다. 천천히 오세요~ ☕")
     
