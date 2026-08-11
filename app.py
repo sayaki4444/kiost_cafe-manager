@@ -3,7 +3,7 @@ import requests
 from datetime import datetime
 import pytz
 import gspread
-import json  # 👈 핵심: json 라이브러리 추가!
+import json
 
 # 1. 페이지 기본 설정
 st.set_page_config(
@@ -149,7 +149,6 @@ SCOPES = [
 @st.cache_resource
 def init_gspread():
     try:
-        # Streamlit Cloud Secrets 사용 시
         if "gcp_service_account" in st.secrets:
             secret_data = st.secrets["gcp_service_account"]
             if isinstance(secret_data, str):
@@ -157,15 +156,8 @@ def init_gspread():
             else:
                 creds_dict = dict(secret_data)
             return gspread.service_account_from_dict(creds_dict, scopes=SCOPES)
-        # 로컬 환경인 경우
         else:
             return gspread.service_account(filename="service_account.json", scopes=SCOPES)
-    except KeyError:
-        st.error("🔑 Streamlit Secrets에 'gcp_service_account' 항목이 없습니다.")
-        return None
-    except json.JSONDecodeError:
-        st.error("🔑 Streamlit Secrets의 JSON 형식이 올바르지 않습니다.")
-        return None
     except Exception as e:
         st.error(f"🔑 구글 API 인증 오류: {e}")
         return None
@@ -275,6 +267,7 @@ with tab2:
                     current_votes = int(row[1])
                     if vote_cols[i % 4].button(menu_name, key=f"vote_{i}"):
                         sheet_vote.update_cell(i + 2, 2, current_votes + 1)
+                        st.cache_data.clear()
                         st.toast(f"{menu_name}에 투표하셨습니다! 🎉")
                         st.rerun()
         except Exception as e:
@@ -289,6 +282,7 @@ with tab3:
     
     if doc:
         try:
+            # 💡 방명록으로 수정 반영!
             sheet_guest = doc.worksheet("방명록")
             
             with st.form("guestbook_form", clear_on_submit=True):
@@ -316,7 +310,7 @@ with tab3:
         st.info("구글 시트 연동 상태를 확인해주세요.")
 
 # -------------------------------------------------------------------
-# 6. 관리자용 메뉴 (사이드바)
+# 6. 관리자용 메뉴 (사이드바) - 상태 변경 즉시 반영 로직 보완
 # -------------------------------------------------------------------
 st.sidebar.title("🔐 관리자 메뉴")
 admin_pw = st.sidebar.text_input("비밀번호를 입력하세요", type="password")
@@ -331,7 +325,7 @@ if admin_pw == "0000":
     else:
         current_status_text = "🔴 금일 마감"
         
-    st.sidebar.info(f"현재 반영된 상태: **{current_status_text}**")
+    st.sidebar.info(f"현재 반영된 상태: **{current_status_text}** (재고: {current_stock}잔)")
     st.sidebar.divider()
     
     st.sidebar.markdown("### 🛠️ 상태 변경하기")
@@ -339,14 +333,17 @@ if admin_pw == "0000":
     if st.sidebar.button("🟢 1단계: 여유 가득", use_container_width=True):
         if sheet:
             sheet.update_acell('B1', 200)
+            st.cache_data.clear()
             st.rerun()
         
     if st.sidebar.button("🟡 2단계: 마감 임박", use_container_width=True):
         if sheet:
             sheet.update_acell('B1', 15)
+            st.cache_data.clear()
             st.rerun()
         
     if st.sidebar.button("🔴 3단계: 금일 마감", use_container_width=True):
         if sheet:
             sheet.update_acell('B1', 0)
+            st.cache_data.clear()
             st.rerun()
