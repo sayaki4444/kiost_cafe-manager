@@ -130,10 +130,9 @@ custom_css = """
 st.markdown(custom_css, unsafe_allow_html=True)
 
 # -------------------------------------------------------------------
-# 3. 데이터 및 시간 처리 / 구글 시트 연동 (kiost_sodam 반영)
+# 3. 데이터 및 시간 처리 / 구글 시트 연동
 # -------------------------------------------------------------------
 
-# 시간 변수
 now_kst = datetime.now(pytz.timezone('Asia/Seoul'))
 current_hour = now_kst.hour
 current_weekday = now_kst.weekday()
@@ -141,13 +140,11 @@ current_weekday = now_kst.weekday()
 is_weekday = current_weekday < 5
 is_opening_hours = 10 <= current_hour < 16
 
-# 명시적 권한 범위(Scope) 설정
 SCOPES = [
     'https://www.googleapis.com/auth/spreadsheets',
     'https://www.googleapis.com/auth/drive'
 ]
 
-# 구글 시트 연결 함수
 @st.cache_resource
 def init_gspread():
     try:
@@ -161,14 +158,12 @@ def init_gspread():
 
 gc = init_gspread()
 
-# 시트 및 변수 초기화
 doc = None
 sheet = None
 current_stock = 0
 
 if gc:
     try:
-        # 시트명 kiost_sodam 연결
         doc = gc.open("kiost_sodam")
         sheet = doc.worksheet("재고")
         current_stock = int(sheet.acell('B1').value)
@@ -269,7 +264,7 @@ with tab2:
                         st.toast(f"{menu_name}에 투표하셨습니다! 🎉")
                         st.rerun()
         except Exception as e:
-            st.warning("투표 데이터를 불러오지 못했습니다. '투표' 탭이 있는지 확인해 주세요.")
+            st.warning(f"투표 데이터를 불러오지 못했습니다: {e}")
     else:
         st.info("구글 시트 연동 상태를 확인해주세요.")
 
@@ -280,7 +275,8 @@ with tab3:
     
     if doc:
         try:
-            sheet_guest = doc.worksheet("방명록")
+            # 💡 시트 내부 탭 이름 '방명력'으로 변경 반영!
+            sheet_guest = doc.worksheet("방명력")
             
             with st.form("guestbook_form", clear_on_submit=True):
                 new_comment = st.text_input("메뉴 건의나 응원의 한마디를 남겨주세요!", placeholder="예: 시원한 콜드브루도 들어오면 좋겠어요!")
@@ -302,7 +298,7 @@ with tab3:
             else:
                 st.caption("아직 등록된 글이 없습니다.")
         except Exception as e:
-            st.warning("방명록 데이터를 불러오지 못했습니다. '방명록' 탭이 있는지 확인해 주세요.")
+            st.warning(f"방명력 데이터를 불러오지 못했습니다: {e}")
     else:
         st.info("구글 시트 연동 상태를 확인해주세요.")
 
