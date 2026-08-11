@@ -31,7 +31,7 @@ except:
 # ==========================================
 # UI 상단: 깃허브에 올린 bg 이미지 1장 띄우기 🖼️
 # ==========================================
-st.markdown("<h3 style='text-align: center; color: #0077B6;'>🌉 KIOST Summer 사내 카페 🧊</h3>", unsafe_allow_html=True)
+st.markdown("<h3 style='text-align: center; color: #0077B6;'>🌉 KIOST 소담터 카페 🧊</h3>", unsafe_allow_html=True)
 
 # 깃허브에 올린 파일명으로 지정 (예시로 bg.jpg라고 적었습니다. 실제 확장자에 맞춰 .png 등으로 변경해 주세요!)
 # 만약 파일이 안 뜬다면 확장자를 포함한 정확한 파일명(예: bg.png)을 적어주세요.
