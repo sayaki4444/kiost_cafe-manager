@@ -212,22 +212,24 @@ st.markdown("<br>", unsafe_allow_html=True)
 
 tab1, tab2, tab3 = st.tabs(["☕ 카페 현황", "🏆 인기 투표", "💬 끄적끄적 방명록"])
 
-# --- [탭 1] 카페 현황 및 날씨 (💡 핵심 수정: 조건문 순서 개편) ---
+# --- [탭 1] 카페 현황 및 날씨 (💡 관리자 단계별 색상 완벽 일치) ---
 with tab1:
     st.markdown("<br>", unsafe_allow_html=True)
     
-    # 관리자가 변경한 재고 상태를 '우선적'으로 반영하여 현황 안내
+    # 🟢 1단계 (200 설정 시): 여유 가득 (녹색)
     if current_stock > 30:
         st.success("### 🟢 여유 있어요!\n맛있는 커피가 넉넉하게 준비되어 있습니다. 천천히 오세요~ ☕")
-    elif current_stock > 15:
+    # 🟡 2단계 (15 설정 시): 마감 임박 (노랑)
+    elif current_stock > 0:
         st.warning("### 🟡 마감 임박!\n오늘 준비된 커피가 얼마 남지 않았어요. 조금만 서둘러 주세요! 🏃‍♂️")
-    elif current_stock == 0:
+    # 🔴 3단계 (0 설정 시): 금일 마감 (빨강)
+    elif current_stock == 0 and (is_weekday and is_opening_hours):
         st.error("### 🔴 금일 마감\n오늘 준비된 커피가 모두 소진되었습니다. 내일 더 맛있는 커피로 만나요! 🌙")
+    # 🌙 운영시간 외 기본 문구
     elif not is_weekday or not is_opening_hours:
-        # 상태 수동 설정이 특별히 지정되지 않은 경우 영업시간 조건 체크
         st.error("### 🌙 운영 시간 외\n사내 카페 운영 시간은 **평일 10:00 ~ 16:00** 입니다.\n내일 영업 시간에 만나요! ☕")
     else:
-        st.warning("### 🟡 마감 임박!\n오늘 준비된 커피가 얼마 남지 않았어요. 조금만 서둘러 주세요! 🏃‍♂️")
+        st.error("### 🔴 금일 마감\n오늘 준비된 커피가 모두 소진되었습니다. 내일 더 맛있는 커피로 만나요! 🌙")
         
     st.markdown("<br>", unsafe_allow_html=True)
     
@@ -334,7 +336,7 @@ else:
     else:
         current_status_text = "🔴 금일 마감"
         
-    st.sidebar.info(f"현재 반영된 상태: **{current_status_text}** (재고 값: {current_stock})")
+    st.sidebar.info(f"현재 반영된 상태: **{current_status_text}**")
     st.sidebar.divider()
     
     st.sidebar.markdown("### 🛠️ 상태 변경하기")
