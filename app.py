@@ -27,15 +27,28 @@ try:
     current_stock = int(sheet.acell('B1').value)
 except:
     current_stock = 0
-
+    
 # ==========================================
-# UI 상단: 시원한 여름 카페 배너 이미지 🖼️
+# UI 상단: 광안대교 3분할 액자 느낌의 배너 🖼️
 # ==========================================
-# use_column_width 대신 use_container_width로 수정 완료!
-st.image("https://images.unsplash.com/photo-1517256064527-09c73fc73e38?auto=format&fit=crop&w=1000&q=80", use_container_width=True)
+st.markdown("<h3 style='text-align: center; color: #0077B6;'>🌉 광안대교 야경 3분할 액자갤러리</h3>", unsafe_allow_html=True)
 
-st.markdown("<h2 style='text-align: center; color: #0077B6;'>🌊 KIOST Summer 사내 카페 🧊</h2>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; color: #0096C7; font-weight: bold;'>시원한 아이스 아메리카노와 함께 활기찬 여름 보내세요! 🌴</p>", unsafe_allow_html=True)
+# 화면을 3칸(액자 3개)으로 나누기
+frame1, frame2, frame3 = st.columns(3)
+
+with frame1:
+    # 왼쪽 액자 이미지 (광안대교 왼쪽 부분)
+    st.image("https://tnnews.co.kr/wp-content/uploads/2023/03/20-4-696x463.jpg?auto=format&fit=crop&w=400&q=80", use_container_width=True)
+
+with frame2:
+    # 가운데 액자 이미지 (광안대교 중앙 부분)
+    st.image("https://tnnews.co.kr/wp-content/uploads/2023/03/20-4-696x463.jpg?auto=format&fit=crop&w=400&q=80", use_container_width=True)
+
+with frame3:
+    # 오른쪽 액자 이미지 (광안대교 오른쪽 부분)
+    st.image("https://tnnews.co.kr/wp-content/uploads/2023/03/20-4-696x463.jpg?auto=format&fit=crop&w=400&q=80", use_container_width=True)
+
+st.markdown("<p style='text-align: center; color: #0096C7; font-weight: bold;'>시원한 바다와 야경을 감상해보세요! ✨</p>", unsafe_allow_html=True)
 st.divider()
 
 # ==========================================
