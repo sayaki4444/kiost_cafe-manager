@@ -262,6 +262,7 @@ with tab2:
                     if vote_cols[i % 4].button(menu_name, key=f"vote_{i}"):
                         sheet_vote.update_cell(i + 2, 2, current_votes + 1)
                         st.cache_data.clear()
+                        st.cache_resource.clear()
                         st.toast(f"{menu_name}에 투표하셨습니다! 🎉")
                         st.rerun()
         except Exception as e:
@@ -286,6 +287,7 @@ with tab3:
                     kst = datetime.now(pytz.timezone('Asia/Seoul')).strftime("%m-%d %H:%M")
                     sheet_guest.append_row([kst, new_comment])
                     st.cache_data.clear()
+                    st.cache_resource.clear()
                     st.success("소중한 의견이 등록되었습니다!")
                     st.rerun()
                     
@@ -303,14 +305,32 @@ with tab3:
         st.info("구글 시트 연동 상태를 확인해주세요.")
 
 # -------------------------------------------------------------------
-# 6. 관리자용 메뉴 (사이드바)
+# 6. 관리자용 메뉴 (사이드바) - 모바일 로그인 버튼 구현
 # -------------------------------------------------------------------
 st.sidebar.title("🔐 관리자 메뉴")
-admin_pw = st.sidebar.text_input("비밀번호를 입력하세요", type="password")
 
-if admin_pw == "0000":
-    st.sidebar.success("인증 완료")
+# 세션 상태 초기화 (로그인 상태 기억)
+if "is_admin_logged_in" not in st.session_state:
+    st.session_state.is_admin_logged_in = False
+
+# 로그인 전 화면
+if not st.session_state.is_admin_logged_in:
+    admin_pw = st.sidebar.text_input("비밀번호를 입력하세요", type="password", key="admin_pw_input")
     
+    # 모바일 터치를 위한 로그인 버튼 추가
+    if st.sidebar.button("🔓 로그인", use_container_width=True, key="login_btn"):
+        if admin_pw == "0000":
+            st.session_state.is_admin_logged_in = True
+            st.sidebar.success("인증 완료!")
+            st.rerun()
+        else:
+            st.sidebar.error("비밀번호가 올바르지 않습니다.")
+
+# 로그인 완료 후 화면
+else:
+    st.sidebar.success("인증 완료 상태입니다.")
+    
+    # 상태 텍스트 판별
     if current_stock > 30:
         current_status_text = "🟢 여유 가득"
     elif current_stock > 0:
@@ -327,16 +347,25 @@ if admin_pw == "0000":
         if sheet:
             sheet.update_acell('B1', 200)
             st.cache_data.clear()
+            st.cache_resource.clear()
             st.rerun()
         
     if st.sidebar.button("🟡 2단계: 마감 임박", use_container_width=True):
         if sheet:
             sheet.update_acell('B1', 15)
             st.cache_data.clear()
+            st.cache_resource.clear()
             st.rerun()
         
     if st.sidebar.button("🔴 3단계: 금일 마감", use_container_width=True):
         if sheet:
             sheet.update_acell('B1', 0)
             st.cache_data.clear()
+            st.cache_resource.clear()
             st.rerun()
+
+    st.sidebar.divider()
+    # 로그아웃 버튼 추가
+    if st.sidebar.button("🔒 로그아웃", use_container_width=True):
+        st.session_state.is_admin_logged_in = False
+        st.rerun()
