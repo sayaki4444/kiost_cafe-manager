@@ -41,21 +41,21 @@ except:
     current_stock = 0
 
 # ==========================================
-# UI 상단: 3분할 액자 느낌의 이미지 🖼️ (PC에서도 세로로 나옴!)
+# UI 상단: 비율이 딱 맞는 3분할 갤러리 🖼️
 # ==========================================
-st.markdown("<h3 style='text-align: center; color: #0077B6;'>🌉 광안대교 야경 액자 갤러리</h3>", unsafe_allow_html=True)
+st.markdown("<h3 style='text-align: center; color: #0077B6;'>🌉 광안대교 야경 갤러리</h3>", unsafe_layout_html=True) # type: ignore
 
-# 기존에 3칸으로 나눴던 부분 (이제 PC에서도 모바일처럼 위아래로 세로 정렬됩니다)
 frame1, frame2, frame3 = st.columns(3)
 
 with frame1:
-    st.image("https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80", use_container_width=True)
+    # &w=400&h=500&fit=crop : 가로 400, 세로 500 크기로 깔끔하게 잘라서 보여줌
+    st.image("https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=400&h=500&q=80", use_container_width=True)
 
 with frame2:
-    st.image("https://images.unsplash.com/photo-1511739001486-6bfe10ce785f?auto=format&fit=crop&w=600&q=80", use_container_width=True)
+    st.image("https://images.unsplash.com/photo-1511739001486-6bfe10ce785f?auto=format&fit=crop&w=400&h=500&q=80", use_container_width=True)
 
 with frame3:
-    st.image("https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=600&q=80", use_container_width=True)
+    st.image("https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=400&h=500&q=80", use_container_width=True)
 
 st.markdown("<p style='text-align: center; color: #0096C7; font-weight: bold;'>시원한 바다와 야경을 감상해보세요! ✨</p>", unsafe_allow_html=True)
 st.divider()
