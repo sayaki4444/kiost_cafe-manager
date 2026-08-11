@@ -4,19 +4,23 @@ from google.oauth2.service_account import Credentials
 import json
 import requests
 from datetime import datetime
-import pytz # 한국 시간을 맞추기 위한 부품
+import pytz
 
 # --- 페이지 기본 설정 ---
 st.set_page_config(page_title="사내 카페 알리미", page_icon="☕", layout="centered")
 
-# 1. 구글 시트 연동 설정
+# 1. 구글 시트 연동 및 시간 설정
 scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
 creds_dict = json.loads(st.secrets["gcp_service_account"])
 creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
 client = gspread.authorize(creds)
+sheet = client.open("kiost_sodam").sheet1
 
-doc = client.open("kiost_sodam")
-sheet = doc.sheet1 # 첫번째 시트 (재고)
+# 한국 시간 가져오기
+tz = pytz.timezone('Asia/Seoul')
+now = datetime.now(tz)
+is_weekday = now.weekday() < 5 # 0:월 ~ 4:금
+is_opening_hours = 10 <= now.hour < 16
 
 try:
     current_stock = int(sheet.acell('B1').value)
@@ -24,13 +28,16 @@ except:
     current_stock = 0
 
 # ==========================================
-# UI 1. 메인 화면 (재고 현황)
+# UI 1. 메인 화면 (자동 마감 로직 추가)
 # ==========================================
 st.markdown("<h1 style='text-align: center; color: #4B3832;'>☕ KIOST 사내 카페</h1>", unsafe_allow_html=True)
 st.markdown("<p style='text-align: center; color: #888888;'>오늘의 커피 현황을 알려드려요</p>", unsafe_allow_html=True)
 st.divider()
 
-if current_stock > 30:
+# 조건문: 주말이거나 운영시간 외라면 무조건 마감 메시지
+if not is_weekday or not is_opening_hours:
+    st.error("### 🌙 운영 시간 외\n사내 카페 운영 시간은 **평일 10:00 ~ 16:00** 입니다.\n내일 영업 시간에 만나요! ☕")
+elif current_stock > 30:
     st.success("### 🟢 여유 있어요!\n맛있는 커피가 넉넉하게 준비되어 있습니다. 천천히 오세요~ ☕")
 elif current_stock > 0:
     st.warning("### 🟡 마감 임박!\n오늘 준비된 커피가 얼마 남지 않았어요. 조금만 서둘러 주세요! 🏃‍♂️")
