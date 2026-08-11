@@ -3,7 +3,6 @@ import requests
 from datetime import datetime
 import pytz
 import gspread
-from oauth2client.service_account import ServiceAccountCredentials
 
 # 1. 페이지 기본 설정
 st.set_page_config(
@@ -131,7 +130,7 @@ custom_css = """
 st.markdown(custom_css, unsafe_allow_html=True)
 
 # -------------------------------------------------------------------
-# 3. 데이터 및 시간 처리 / 구글 시트 연동 복구
+# 3. 데이터 및 시간 처리 / 최신 구글 시트 연동
 # -------------------------------------------------------------------
 
 # 시간 변수
@@ -142,20 +141,17 @@ current_weekday = now_kst.weekday()
 is_weekday = current_weekday < 5
 is_opening_hours = 10 <= current_hour < 16
 
-# 구글 시트 연결 함수
+# 구글 시트 연결 함수 (oauth2client 없이 최신 방식으로 변경)
 @st.cache_resource
 def init_gspread():
     try:
-        # Secrets 환경 (Streamlit Cloud)
+        # Streamlit Cloud Secrets 방식
         if "gcp_service_account" in st.secrets:
             return gspread.service_account_from_dict(st.secrets["gcp_service_account"])
-        # 로컬 json 파일 환경
+        # 로컬 json 파일 방식 (service_account.json이 같은 폴더에 있을 경우)
         else:
-            scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-            creds = ServiceAccountCredentials.from_json_keyfile_name("service_account.json", scope)
-            return gspread.authorize(creds)
+            return gspread.service_account(filename="service_account.json")
     except Exception as e:
-        st.error(f"구글 시트 연동 실패: {e}")
         return None
 
 gc = init_gspread()
@@ -171,7 +167,7 @@ if gc:
         sheet = doc.worksheet("재고")
         current_stock = int(sheet.acell('B1').value)
     except Exception as e:
-        st.error(f"데이터를 불러오는 중 오류 발생: {e}")
+        st.error(f"시트 데이터를 읽어오는 중 오류가 발생했습니다: {e}")
 
 # -------------------------------------------------------------------
 # 4. 상단 UI 헤더 및 메인 그래픽
@@ -189,7 +185,6 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# 가운데 메인 그래픽 (요청하신 재고 표시 문구 제거완료)
 st.markdown("""
 <div class="main-circle-card">
     <div style="font-size: 13px; color: #c084fc; margin-bottom: 6px;">☕ Cafe Status</div>
@@ -306,7 +301,7 @@ with tab3:
         st.info("구글 시트 연동을 확인해주세요.")
 
 # -------------------------------------------------------------------
-# 6. 관리자용 메뉴 (사이드바 복구)
+# 6. 관리자용 메뉴 (사이드바)
 # -------------------------------------------------------------------
 st.sidebar.title("🔐 관리자 메뉴")
 admin_pw = st.sidebar.text_input("비밀번호를 입력하세요", type="password")
