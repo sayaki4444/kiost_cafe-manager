@@ -130,7 +130,7 @@ custom_css = """
 st.markdown(custom_css, unsafe_allow_html=True)
 
 # -------------------------------------------------------------------
-# 3. 데이터 및 시간 처리 / 최신 구글 시트 연동
+# 3. 데이터 및 시간 처리 / 구글 시트 연동 (kiost_sodam 반영)
 # -------------------------------------------------------------------
 
 # 시간 변수
@@ -141,16 +141,21 @@ current_weekday = now_kst.weekday()
 is_weekday = current_weekday < 5
 is_opening_hours = 10 <= current_hour < 16
 
-# 구글 시트 연결 함수 (oauth2client 없이 최신 방식으로 변경)
+# 명시적 권한 범위(Scope) 설정
+SCOPES = [
+    'https://www.googleapis.com/auth/spreadsheets',
+    'https://www.googleapis.com/auth/drive'
+]
+
+# 구글 시트 연결 함수
 @st.cache_resource
 def init_gspread():
     try:
-        # Streamlit Cloud Secrets 방식
         if "gcp_service_account" in st.secrets:
-            return gspread.service_account_from_dict(st.secrets["gcp_service_account"])
-        # 로컬 json 파일 방식 (service_account.json이 같은 폴더에 있을 경우)
+            creds_dict = dict(st.secrets["gcp_service_account"])
+            return gspread.service_account_from_dict(creds_dict, scopes=SCOPES)
         else:
-            return gspread.service_account(filename="service_account.json")
+            return gspread.service_account(filename="service_account.json", scopes=SCOPES)
     except Exception as e:
         return None
 
@@ -163,11 +168,12 @@ current_stock = 0
 
 if gc:
     try:
-        doc = gc.open("소담터")
+        # 시트명 kiost_sodam 연결
+        doc = gc.open("kiost_sodam")
         sheet = doc.worksheet("재고")
         current_stock = int(sheet.acell('B1').value)
     except Exception as e:
-        st.error(f"시트 데이터를 읽어오는 중 오류가 발생했습니다: {e}")
+        st.error(f"구글 시트('kiost_sodam') 연결 실패: {e}")
 
 # -------------------------------------------------------------------
 # 4. 상단 UI 헤더 및 메인 그래픽
@@ -263,9 +269,9 @@ with tab2:
                         st.toast(f"{menu_name}에 투표하셨습니다! 🎉")
                         st.rerun()
         except Exception as e:
-            st.warning("투표 데이터를 불러오지 못했습니다.")
+            st.warning("투표 데이터를 불러오지 못했습니다. '투표' 탭이 있는지 확인해 주세요.")
     else:
-        st.info("구글 시트 연동을 확인해주세요.")
+        st.info("구글 시트 연동 상태를 확인해주세요.")
 
 # --- [탭 3] 한줄 게시판 (방명록) ---
 with tab3:
@@ -296,9 +302,9 @@ with tab3:
             else:
                 st.caption("아직 등록된 글이 없습니다.")
         except Exception as e:
-            st.warning("방명록 데이터를 불러오지 못했습니다.")
+            st.warning("방명록 데이터를 불러오지 못했습니다. '방명록' 탭이 있는지 확인해 주세요.")
     else:
-        st.info("구글 시트 연동을 확인해주세요.")
+        st.info("구글 시트 연동 상태를 확인해주세요.")
 
 # -------------------------------------------------------------------
 # 6. 관리자용 메뉴 (사이드바)
