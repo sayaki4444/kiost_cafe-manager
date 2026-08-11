@@ -76,7 +76,7 @@ try:
                 st.toast(f"{menu_name}에 투표하셨습니다! 🎉")
                 st.rerun()
 except:
-    st.caption("투표 시트를 확인해주세요.")
+    st.caption("투표 감사합니다..")
 
 st.divider()
 
