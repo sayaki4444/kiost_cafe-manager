@@ -79,6 +79,11 @@ if admin_pw == "0000":
         new_stock = max(0, current_stock - 5)
         sheet.update_acell('B1', new_stock)
         st.rerun()
+
+        if col_btn3.button("-10잔"):
+        new_stock = max(0, current_stock - 10)
+        sheet.update_acell('B1', new_stock)
+        st.rerun() 
         
     st.sidebar.divider() 
     
