@@ -149,13 +149,31 @@ SCOPES = [
 @st.cache_resource
 def init_gspread():
     try:
+        # 1. Streamlit Cloud Secrets에 설정이 있는 경우
         if "gcp_service_account" in st.secrets:
-            creds_dict = dict(st.secrets["gcp_service_account"])
+            secret_data = st.secrets["gcp_service_account"]
+            
+            # 만약 Secrets에 JSON 텍스트 그대로 복붙했다면 문자열(str)로 인식되므로 변환
+            if isinstance(secret_data, str):
+                creds_dict = json.loads(secret_data)
+            else:
+                creds_dict = dict(secret_data)
+                
             return gspread.service_account_from_dict(creds_dict, scopes=SCOPES)
+            
+        # 2. 로컬 환경인 경우 (service_account.json 파일)
         else:
             return gspread.service_account(filename="service_account.json", scopes=SCOPES)
+            
+    except KeyError:
+        st.error("🔑 Streamlit Secrets에 'gcp_service_account' 항목이 없습니다. 설정 이름을 확인해주세요.")
+        return None
+    except json.JSONDecodeError:
+        st.error("🔑 Streamlit Secrets의 형식이 올바른 JSON 또는 TOML 형식이 아닙니다.")
+        return None
     except Exception as e:
-        st.error(f"🔑 구글 API 인증 오류: {e}")
+        # 정확히 어떤 에러인지 상세하게 화면에 출력
+        st.error(f"🔑 구글 API 인증 오류 상세: {type(e).__name__} - {e}")
         return None
 
 gc = init_gspread()
