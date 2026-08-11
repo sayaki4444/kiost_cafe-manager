@@ -29,24 +29,15 @@ except:
     current_stock = 0
 
 # ==========================================
-# UI 상단: 요청하신 광안대교 이미지 3분할 갤러리 🖼️
+# UI 상단: 깃허브에 올린 bg 이미지 1장 띄우기 🖼️
 # ==========================================
 st.markdown("<h3 style='text-align: center; color: #0077B6;'>🌉 KIOST Summer 사내 카페 🧊</h3>", unsafe_allow_html=True)
 
-# 화면을 3칸(액자 3개)으로 나누기
-frame1, frame2, frame3 = st.columns(3)
-
-# 지정해주신 이미지 링크를 똑같이 적용하되, 세로 비율을 맞춰 깔끔하게 정돈
-img_url = "https://tnnews.co.kr/wp-content/uploads/2023/03/30-3-630x420.jpg"
-
-with frame1:
-    st.image(img_url, use_container_width=True)
-
-with frame2:
-    st.image(img_url, use_container_width=True)
-
-with frame3:
-    st.image(img_url, use_container_width=True)
+# 깃허브에 올린 파일명으로 지정 (예시로 bg.jpg라고 적었습니다. 실제 확장자에 맞춰 .png 등으로 변경해 주세요!)
+# 만약 파일이 안 뜬다면 확장자를 포함한 정확한 파일명(예: bg.png)을 적어주세요.
+col1, col2, col3 = st.columns([1, 3, 1])
+with col2:
+    st.image("bg.jpg", use_container_width=True)
 
 st.markdown("<p style='text-align: center; color: #0096C7; font-weight: bold;'>시원한 아이스 아메리카노와 함께 활기찬 여름 보내세요! 🌴</p>", unsafe_allow_html=True)
 st.divider()
