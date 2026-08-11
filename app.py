@@ -57,7 +57,7 @@ st.divider()
 st.markdown("### 🌤️ 오늘의 부산 날씨")
 try:
     # 3초 안에 부산 날씨(이모티콘+온도)를 가져옵니다.
-    weather_req = requests.get("https://wttr.in/Busan?format=%c+%t", timeout=3)
+    weather_req = requests.get("https://wttr.in/Busan?format=%c+%t&m", timeout=3)
     if weather_req.status_code == 200:
         st.info(f"지금 밖은 **{weather_req.text}** 입니다. 커피 한 잔 어떠세요?")
     else:
