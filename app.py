@@ -164,17 +164,20 @@ def init_gspread():
 
 gc = init_gspread()
 
-doc = None
-sheet = None
-current_stock = 0
-
-if gc:
+# 💡 실시간 재고 조회 함수 (캐싱 없이 매번 새로 읽도록 구성)
+def get_current_stock(_gc):
+    if not _gc:
+        return None, None, 0
     try:
-        doc = gc.open("kiost_sodam")
+        doc = _gc.open("kiost_sodam")
         sheet = doc.worksheet("재고")
-        current_stock = int(sheet.acell('B1').value)
+        stock_val = int(sheet.acell('B1').value)
+        return doc, sheet, stock_val
     except Exception as e:
-        st.error(f"📄 구글 시트('kiost_sodam') 읽기 실패: {e}")
+        st.error(f"📄 구글 시트 읽기 실패: {e}")
+        return None, None, 0
+
+doc, sheet, current_stock = get_current_stock(gc)
 
 # -------------------------------------------------------------------
 # 4. 상단 UI 헤더 및 메인 그래픽
@@ -261,8 +264,6 @@ with tab2:
                     current_votes = int(row[1])
                     if vote_cols[i % 4].button(menu_name, key=f"vote_{i}"):
                         sheet_vote.update_cell(i + 2, 2, current_votes + 1)
-                        st.cache_data.clear()
-                        st.cache_resource.clear()
                         st.toast(f"{menu_name}에 투표하셨습니다! 🎉")
                         st.rerun()
         except Exception as e:
@@ -286,8 +287,6 @@ with tab3:
                 if submitted and new_comment:
                     kst = datetime.now(pytz.timezone('Asia/Seoul')).strftime("%m-%d %H:%M")
                     sheet_guest.append_row([kst, new_comment])
-                    st.cache_data.clear()
-                    st.cache_resource.clear()
                     st.success("소중한 의견이 등록되었습니다!")
                     st.rerun()
                     
@@ -305,19 +304,15 @@ with tab3:
         st.info("구글 시트 연동 상태를 확인해주세요.")
 
 # -------------------------------------------------------------------
-# 6. 관리자용 메뉴 (사이드바) - 모바일 로그인 버튼 구현
+# 6. 관리자용 메뉴 (사이드바) - 상태 변경 즉시 반영 로직 수정
 # -------------------------------------------------------------------
 st.sidebar.title("🔐 관리자 메뉴")
 
-# 세션 상태 초기화 (로그인 상태 기억)
 if "is_admin_logged_in" not in st.session_state:
     st.session_state.is_admin_logged_in = False
 
-# 로그인 전 화면
 if not st.session_state.is_admin_logged_in:
     admin_pw = st.sidebar.text_input("비밀번호를 입력하세요", type="password", key="admin_pw_input")
-    
-    # 모바일 터치를 위한 로그인 버튼 추가
     if st.sidebar.button("🔓 로그인", use_container_width=True, key="login_btn"):
         if admin_pw == "0000":
             st.session_state.is_admin_logged_in = True
@@ -326,11 +321,9 @@ if not st.session_state.is_admin_logged_in:
         else:
             st.sidebar.error("비밀번호가 올바르지 않습니다.")
 
-# 로그인 완료 후 화면
 else:
     st.sidebar.success("인증 완료 상태입니다.")
     
-    # 상태 텍스트 판별
     if current_stock > 30:
         current_status_text = "🟢 여유 가득"
     elif current_stock > 0:
@@ -343,29 +336,23 @@ else:
     
     st.sidebar.markdown("### 🛠️ 상태 변경하기")
     
+    # 💡 시트 B1 셀 업데이트 후 새로고침
     if st.sidebar.button("🟢 1단계: 여유 가득", use_container_width=True):
         if sheet:
             sheet.update_acell('B1', 200)
-            st.cache_data.clear()
-            st.cache_resource.clear()
             st.rerun()
         
     if st.sidebar.button("🟡 2단계: 마감 임박", use_container_width=True):
         if sheet:
             sheet.update_acell('B1', 15)
-            st.cache_data.clear()
-            st.cache_resource.clear()
             st.rerun()
         
     if st.sidebar.button("🔴 3단계: 금일 마감", use_container_width=True):
         if sheet:
             sheet.update_acell('B1', 0)
-            st.cache_data.clear()
-            st.cache_resource.clear()
             st.rerun()
 
     st.sidebar.divider()
-    # 로그아웃 버튼 추가
     if st.sidebar.button("🔒 로그아웃", use_container_width=True):
         st.session_state.is_admin_logged_in = False
         st.rerun()
