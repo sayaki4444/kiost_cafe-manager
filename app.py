@@ -7,7 +7,7 @@ from datetime import datetime
 import pytz
 
 # --- 페이지 기본 설정 ---
-st.set_page_config(page_title="사내 카페 알리미", page_icon="☕", layout="centered")
+st.set_page_config(page_title="KIOST 사내 카페", page_icon="☕", layout="centered")
 
 # 1. 구글 시트 연동 및 시간 설정
 scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
@@ -29,97 +29,106 @@ except:
     current_stock = 0
 
 # ==========================================
-# UI 1. 메인 화면 (여름 컨셉으로 화사하게 변경 🌊)
+# UI 상단: 시원한 여름 카페 배너 이미지 🖼️
 # ==========================================
-# 시원한 바다 블루(#0077B6) 컬러와 여름 감성 타이틀
-st.markdown("<h1 style='text-align: center; color: #0077B6;'>🌊 KIOST Summer 사내 카페 🧊</h1>", unsafe_allow_html=True)
+st.image("https://images.unsplash.com/photo-1517256064527-09c73fc73e38?auto=format&fit=crop&w=1000&q=80", use_column_width=True)
+
+st.markdown("<h2 style='text-align: center; color: #0077B6;'>🌊 KIOST Summer 사내 카페 🧊</h2>", unsafe_allow_html=True)
 st.markdown("<p style='text-align: center; color: #0096C7; font-weight: bold;'>시원한 아이스 아메리카노와 함께 활기찬 여름 보내세요! 🌴</p>", unsafe_allow_html=True)
 st.divider()
 
-if not is_weekday or not is_opening_hours:
-    st.error("### 🌙 운영 시간 외\n사내 카페 운영 시간은 **평일 10:00 ~ 16:00** 입니다.\n내일 영업 시간에 만나요! ☕")
-elif current_stock > 30:
-    st.success("### 🟢 여유 있어요!\n맛있는 커피가 넉넉하게 준비되어 있습니다. 천천히 오세요~ ☕")
-elif current_stock > 0:
-    st.warning("### 🟡 마감 임박!\n오늘 준비된 커피가 얼마 남지 않았어요. 조금만 서둘러 주세요! 🏃‍♂️")
-else:
-    st.error("### 🔴 금일 마감\n오늘 준비된 커피가 모두 소진되었습니다. 내일 더 맛있는 커피로 만나요! 🌙")
-
-st.divider()
-
 # ==========================================
-# UI 2. 🏆 인기 메뉴 TOP 3 대시보드
+# 탭(Tab) 메뉴로 깔끔하게 화면 분리하기 📱
 # ==========================================
-st.markdown("### 🏆 가장 사랑받는 메뉴 TOP 3")
-try:
-    sheet_vote = doc.worksheet("투표")
-    vote_data = sheet_vote.get_all_values()[1:]
-    vote_data.sort(key=lambda x: int(x[1]), reverse=True)
-    top3 = vote_data[:3]
+tab1, tab2, tab3 = st.tabs(["☕ 카페 현황", "🏆 인기 투표", "💬 끄적끄적 방명록"])
+
+# --- [탭 1] 카페 현황 및 날씨 ---
+with tab1:
+    st.markdown("<br>", unsafe_allow_html=True)
     
-    col1, col2, col3 = st.columns(3)
-    if len(top3) >= 1:
-        col1.metric(label="🥇 1위", value=top3[0][0], delta=f"{top3[0][1]}표")
-    if len(top3) >= 2:
-        col2.metric(label="🥈 2위", value=top3[1][0], delta=f"{top3[1][1]}표")
-    if len(top3) >= 3:
-        col3.metric(label="🥉 3위", value=top3[2][0], delta=f"{top3[2][1]}표")
-        
-    with st.expander("👉 나도 최애 메뉴에 투표하기"):
-        st.caption("메뉴를 누르면 즉시 1표가 올라갑니다!")
-        vote_cols = st.columns(4)
-        for i, row in enumerate(vote_data):
-            menu_name = row[0]
-            current_votes = int(row[1])
-            if vote_cols[i % 4].button(menu_name, key=f"vote_{i}"):
-                sheet_vote.update_cell(i + 2, 2, current_votes + 1)
-                st.toast(f"{menu_name}에 투표하셨습니다! 🎉")
-                st.rerun()
-except:
-    st.caption("투표 감사합니다..")
-
-st.divider()
-
-# ==========================================
-# UI 3. 💬 소통의 공간 (한줄 게시판)
-# ==========================================
-st.markdown("### 💬 끄적끄적 한줄 게시판")
-try:
-    sheet_guest = doc.worksheet("방명록")
-    
-    with st.form("guestbook_form", clear_on_submit=True):
-        new_comment = st.text_input("메뉴 건의나 응원의 한마디를 남겨주세요!", placeholder="예: 시원한 콜드브루도 들어오면 좋겠어요!")
-        submitted = st.form_submit_button("등록하기")
-        
-        if submitted and new_comment:
-            kst = datetime.now(pytz.timezone('Asia/Seoul')).strftime("%m-%d %H:%M")
-            sheet_guest.append_row([kst, new_comment])
-            st.cache_data.clear()
-            st.success("소중한 의견이 등록되었습니다!")
-            st.rerun()
-            
-    guest_data = sheet_guest.get_all_values()
-    if len(guest_data) > 1:
-        data_rows = guest_data[1:]
-        st.markdown("##### 💌 최근 남겨진 이야기")
-        for row in reversed(data_rows[-5:]):
-            st.info(f"**{row[0]}** | {row[1]}")
+    # 상태 메시지를 눈에 띄는 박스 형태로 제공
+    if not is_weekday or not is_opening_hours:
+        st.error("### 🌙 운영 시간 외\n사내 카페 운영 시간은 **평일 10:00 ~ 16:00** 입니다.\n내일 영업 시간에 만나요! ☕")
+    elif current_stock > 30:
+        st.success("### 🟢 여유 있어요!\n맛있는 커피가 넉넉하게 준비되어 있습니다. 천천히 오세요~ ☕")
+    elif current_stock > 0:
+        st.warning("### 🟡 마감 임박!\n오늘 준비된 커피가 얼마 남지 않았어요. 조금만 서둘러 주세요! 🏃‍♂️")
     else:
-        st.caption("아직 등록된 글이 없습니다.")
-except:
-    pass
+        st.error("### 🔴 금일 마감\n오늘 준비된 커피가 모두 소진되었습니다. 내일 더 맛있는 커피로 만나요! 🌙")
+        
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    
+    # 하단 날씨 정보 카드
+    try:
+        weather_req = requests.get("https://wttr.in/Busan?format=%c+%t&m", timeout=3)
+        if weather_req.status_code == 200:
+            st.info(f"🌤️ **오늘의 부산 날씨:** {weather_req.text}  |  상쾌한 음료와 함께 기분 좋은 하루 보내세요!")
+    except:
+        pass
 
-st.divider()
+# --- [탭 2] 인기 메뉴 TOP 3 & 투표 ---
+with tab2:
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("### 🏆 가장 사랑받는 메뉴 TOP 3")
+    
+    try:
+        sheet_vote = doc.worksheet("투표")
+        vote_data = sheet_vote.get_all_values()[1:]
+        vote_data.sort(key=lambda x: int(x[1]), reverse=True)
+        top3 = vote_data[:3]
+        
+        col1, col2, col3 = st.columns(3)
+        if len(top3) >= 1:
+            col1.metric(label="🥇 1위", value=top3[0][0], delta=f"{top3[0][1]}표")
+        if len(top3) >= 2:
+            col2.metric(label="🥈 2위", value=top3[1][0], delta=f"{top3[1][1]}표")
+        if len(top3) >= 3:
+            col3.metric(label="🥉 3위", value=top3[2][0], delta=f"{top3[2][1]}표")
+            
+        st.markdown("<br>", unsafe_allow_html=True)
+        with st.expander("👉 나도 최애 메뉴에 투표하기"):
+            st.caption("메뉴를 누르면 즉시 1표가 올라갑니다!")
+            vote_cols = st.columns(4)
+            for i, row in enumerate(vote_data):
+                menu_name = row[0]
+                current_votes = int(row[1])
+                if vote_cols[i % 4].button(menu_name, key=f"vote_{i}"):
+                    sheet_vote.update_cell(i + 2, 2, current_votes + 1)
+                    st.toast(f"{menu_name}에 투표하셨습니다! 🎉")
+                    st.rerun()
+    except:
+        pass
 
-# ==========================================
-# UI 4. 하단 날씨 정보
-# ==========================================
-try:
-    weather_req = requests.get("https://wttr.in/Busan?format=%c+%t&m", timeout=3)
-    if weather_req.status_code == 200:
-        st.caption(f"🌤️ 오늘의 부산 날씨: **{weather_req.text}**")
-except:
-    pass
+# --- [탭 3] 한줄 게시판 (방명록) ---
+with tab3:
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("### 💬 끄적끄적 한줄 게시판")
+    
+    try:
+        sheet_guest = doc.worksheet("방명록")
+        
+        with st.form("guestbook_form", clear_on_submit=True):
+            new_comment = st.text_input("메뉴 건의나 응원의 한마디를 남겨주세요!", placeholder="예: 시원한 콜드브루도 들어오면 좋겠어요!")
+            submitted = st.form_submit_button("등록하기")
+            
+            if submitted and new_comment:
+                kst = datetime.now(pytz.timezone('Asia/Seoul')).strftime("%m-%d %H:%M")
+                sheet_guest.append_row([kst, new_comment])
+                st.cache_data.clear()
+                st.success("소중한 의견이 등록되었습니다!")
+                st.rerun()
+                
+        guest_data = sheet_guest.get_all_values()
+        if len(guest_data) > 1:
+            data_rows = guest_data[1:]
+            st.markdown("##### 💌 최근 남겨진 이야기")
+            for row in reversed(data_rows[-5:]):
+                st.info(f"**{row[0]}** | {row[1]}")
+        else:
+            st.caption("아직 등록된 글이 없습니다.")
+    except:
+        pass
+
 
 # ==========================================
 # UI 5. 카페 관리자용 화면 (사이드바)
