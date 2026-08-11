@@ -93,22 +93,24 @@ try:
             # 한국 시간으로 기록하기
             kst = datetime.now(pytz.timezone('Asia/Seoul')).strftime("%m-%d %H:%M")
             sheet_guest.append_row([kst, new_comment])
+            
+            # --- 핵심 수정 부분 ---
+            st.cache_data.clear() # 이전 기억을 지워서 즉시 최신 데이터를 불러오게 함!
             st.success("소중한 의견이 등록되었습니다!")
-            st.rerun()
+            st.rerun() # 즉시 화면 새로고침
             
     # 2. 최근 댓글 5개 보여주기
-    guest_data = sheet_guest.get_all_values()[1:] # 제목 줄 제외
-    if guest_data:
+    guest_data = sheet_guest.get_all_values()
+    if len(guest_data) > 1: # 제목줄 제외하고 데이터가 있을 때만
+        data_rows = guest_data[1:]
         st.markdown("##### 💌 최근 남겨진 이야기")
         # 최신 글이 위로 오도록 뒤집어서 5개만 보여줌
-        for row in reversed(guest_data[-5:]):
+        for row in reversed(data_rows[-5:]):
             st.info(f"**{row[0]}** | {row[1]}")
     else:
         st.caption("아직 등록된 글이 없습니다. 첫 번째 글을 남겨보세요!")
-except:
-    st.caption("방명록 시트를 불러올 수 없습니다.")
-
-st.divider()
+except Exception as e:
+    st.caption(f"방명록을 불러오는 중 오류가 발생했습니다.")
 
 # ==========================================
 # UI 4. 하단 날씨 정보
