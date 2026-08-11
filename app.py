@@ -202,12 +202,6 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-with st.container():
-    user_input = st.text_input("메모 작성", placeholder="오늘의 상태를 입력하세요...")
-    if st.button("저장하기", key="save_btn"):
-        if user_input:
-            st.success(f"저장 완료: {user_input}")
-
 st.markdown("<br>", unsafe_allow_html=True)
 
 # -------------------------------------------------------------------
@@ -282,7 +276,6 @@ with tab3:
     
     if doc:
         try:
-            # 💡 방명록으로 수정 반영!
             sheet_guest = doc.worksheet("방명록")
             
             with st.form("guestbook_form", clear_on_submit=True):
@@ -310,7 +303,7 @@ with tab3:
         st.info("구글 시트 연동 상태를 확인해주세요.")
 
 # -------------------------------------------------------------------
-# 6. 관리자용 메뉴 (사이드바) - 상태 변경 즉시 반영 로직 보완
+# 6. 관리자용 메뉴 (사이드바)
 # -------------------------------------------------------------------
 st.sidebar.title("🔐 관리자 메뉴")
 admin_pw = st.sidebar.text_input("비밀번호를 입력하세요", type="password")
