@@ -3,6 +3,7 @@ import requests
 from datetime import datetime
 import pytz
 import gspread
+import json  # 👈 핵심: json 라이브러리 추가!
 
 # 1. 페이지 기본 설정
 st.set_page_config(
@@ -32,7 +33,7 @@ custom_css = """
         margin: 0 auto;
     }
 
-    /* Streamlit 기본 푸터만 숨기기 (헤더를 숨기면 관리자 사이드바 버튼이 사라지므로 헤더는 살림) */
+    /* Streamlit 기본 푸터 숨기기 */
     footer {
         visibility: hidden !important;
         height: 0px !important;
@@ -145,40 +146,32 @@ SCOPES = [
     'https://www.googleapis.com/auth/drive'
 ]
 
-# 구글 시트 연결 함수 (에러 발생 시 화면에 출력되도록 수정)
 @st.cache_resource
 def init_gspread():
     try:
-        # 1. Streamlit Cloud Secrets에 설정이 있는 경우
+        # Streamlit Cloud Secrets 사용 시
         if "gcp_service_account" in st.secrets:
             secret_data = st.secrets["gcp_service_account"]
-            
-            # 만약 Secrets에 JSON 텍스트 그대로 복붙했다면 문자열(str)로 인식되므로 변환
             if isinstance(secret_data, str):
                 creds_dict = json.loads(secret_data)
             else:
                 creds_dict = dict(secret_data)
-                
             return gspread.service_account_from_dict(creds_dict, scopes=SCOPES)
-            
-        # 2. 로컬 환경인 경우 (service_account.json 파일)
+        # 로컬 환경인 경우
         else:
             return gspread.service_account(filename="service_account.json", scopes=SCOPES)
-            
     except KeyError:
-        st.error("🔑 Streamlit Secrets에 'gcp_service_account' 항목이 없습니다. 설정 이름을 확인해주세요.")
+        st.error("🔑 Streamlit Secrets에 'gcp_service_account' 항목이 없습니다.")
         return None
     except json.JSONDecodeError:
-        st.error("🔑 Streamlit Secrets의 형식이 올바른 JSON 또는 TOML 형식이 아닙니다.")
+        st.error("🔑 Streamlit Secrets의 JSON 형식이 올바르지 않습니다.")
         return None
     except Exception as e:
-        # 정확히 어떤 에러인지 상세하게 화면에 출력
-        st.error(f"🔑 구글 API 인증 오류 상세: {type(e).__name__} - {e}")
+        st.error(f"🔑 구글 API 인증 오류: {e}")
         return None
 
 gc = init_gspread()
 
-# 시트 및 변수 초기화
 doc = None
 sheet = None
 current_stock = 0
@@ -287,7 +280,7 @@ with tab2:
         except Exception as e:
             st.warning(f"투표 데이터를 불러오지 못했습니다: {e}")
     else:
-        st.info("상단의 구글 시트 에러 메시지를 확인해주세요.")
+        st.info("구글 시트 연동 상태를 확인해주세요.")
 
 # --- [탭 3] 한줄 게시판 (방명록) ---
 with tab3:
@@ -320,7 +313,7 @@ with tab3:
         except Exception as e:
             st.warning(f"방명록 데이터를 불러오지 못했습니다: {e}")
     else:
-        st.info("상단의 구글 시트 에러 메시지를 확인해주세요.")
+        st.info("구글 시트 연동 상태를 확인해주세요.")
 
 # -------------------------------------------------------------------
 # 6. 관리자용 메뉴 (사이드바)
