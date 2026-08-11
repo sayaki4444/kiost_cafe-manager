@@ -29,11 +29,11 @@ st.divider()
 
 # 숫자를 숨기고 3단계 '신호등' 상태로 보여주기
 if current_stock > 30:
-    # 50잔 초과일 때: 넉넉함
+    # 30잔 초과일 때: 넉넉함
     st.success("### 🟢 여유 있어요!\n맛있는 커피가 넉넉하게 준비되어 있습니다. 천천히 오세요~ ☕")
     
 elif current_stock > 0:
-    # 50잔 이하 ~ 1잔 이상일 때: 마감 임박
+    # 30잔 이하 ~ 1잔 이상일 때: 마감 임박
     st.warning("### 🟡 마감 임박!\n오늘 준비된 커피가 얼마 남지 않았어요. 조금만 서둘러 주세요! 🏃‍♂️")
     
 else:
@@ -69,7 +69,7 @@ if admin_pw == "0000":
     st.sidebar.info(f"📊 현재 남은 수량: **{current_stock}잔**")
     st.sidebar.divider()
     
-    col_btn1, col_btn2 = st.sidebar.columns(2)
+    col_btn1, col_btn2, col_btn3 = st.sidebar.columns(3)
     if col_btn1.button("-1잔"):
         new_stock = max(0, current_stock - 1)
         sheet.update_acell('B1', new_stock)
@@ -80,7 +80,7 @@ if admin_pw == "0000":
         sheet.update_acell('B1', new_stock)
         st.rerun()
 
-        if col_btn3.button("-10잔"):
+    if col_btn3.button("-10잔"):
         new_stock = max(0, current_stock - 10)
         sheet.update_acell('B1', new_stock)
         st.rerun() 
