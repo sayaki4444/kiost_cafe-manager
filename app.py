@@ -143,7 +143,7 @@ if admin_pw == "0000":
     st.sidebar.success("인증 완료")
     
     if current_stock > 30:
-        current_status_text = "🟢 여유 있어요"
+        current_status_text = "🟢 여유 가득"
     elif current_stock > 0:
         current_status_text = "🟡 마감 임박"
     else:
@@ -154,14 +154,14 @@ if admin_pw == "0000":
     
     st.sidebar.markdown("### 🛠️ 상태 변경하기")
     
-    if st.sidebar.button("🟢 1단계: 여유 있어요로 변경", use_container_width=True):
+    if st.sidebar.button("🟢 1단계: 여유 가득", use_container_width=True):
         sheet.update_acell('B1', 200)
         st.rerun()
         
-    if st.sidebar.button("🟡 2단계: 마감 임박으로 변경", use_container_width=True):
+    if st.sidebar.button("🟡 2단계: 마감 임박", use_container_width=True):
         sheet.update_acell('B1', 15)
         st.rerun()
         
-    if st.sidebar.button("🔴 3단계: 즉시 마감하기", use_container_width=True):
+    if st.sidebar.button("🔴 3단계: 금일 마감", use_container_width=True):
         sheet.update_acell('B1', 0)
         st.rerun()
