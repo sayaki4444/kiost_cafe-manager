@@ -32,8 +32,8 @@ custom_css = """
         margin: 0 auto;
     }
 
-    /* Streamlit 기본 상단 헤더/푸터 숨기기 */
-    header, footer {
+    /* Streamlit 기본 푸터만 숨기기 (헤더를 숨기면 관리자 사이드바 버튼이 사라지므로 헤더는 살림) */
+    footer {
         visibility: hidden !important;
         height: 0px !important;
     }
@@ -145,6 +145,7 @@ SCOPES = [
     'https://www.googleapis.com/auth/drive'
 ]
 
+# 구글 시트 연결 함수 (에러 발생 시 화면에 출력되도록 수정)
 @st.cache_resource
 def init_gspread():
     try:
@@ -154,10 +155,12 @@ def init_gspread():
         else:
             return gspread.service_account(filename="service_account.json", scopes=SCOPES)
     except Exception as e:
+        st.error(f"🔑 구글 API 인증 오류: {e}")
         return None
 
 gc = init_gspread()
 
+# 시트 및 변수 초기화
 doc = None
 sheet = None
 current_stock = 0
@@ -168,7 +171,7 @@ if gc:
         sheet = doc.worksheet("재고")
         current_stock = int(sheet.acell('B1').value)
     except Exception as e:
-        st.error(f"구글 시트('kiost_sodam') 연결 실패: {e}")
+        st.error(f"📄 구글 시트('kiost_sodam') 읽기 실패: {e}")
 
 # -------------------------------------------------------------------
 # 4. 상단 UI 헤더 및 메인 그래픽
@@ -266,7 +269,7 @@ with tab2:
         except Exception as e:
             st.warning(f"투표 데이터를 불러오지 못했습니다: {e}")
     else:
-        st.info("구글 시트 연동 상태를 확인해주세요.")
+        st.info("상단의 구글 시트 에러 메시지를 확인해주세요.")
 
 # --- [탭 3] 한줄 게시판 (방명록) ---
 with tab3:
@@ -275,8 +278,7 @@ with tab3:
     
     if doc:
         try:
-            # 💡 시트 내부 탭 이름 '방명력'으로 변경 반영!
-            sheet_guest = doc.worksheet("방명력")
+            sheet_guest = doc.worksheet("방명록")
             
             with st.form("guestbook_form", clear_on_submit=True):
                 new_comment = st.text_input("메뉴 건의나 응원의 한마디를 남겨주세요!", placeholder="예: 시원한 콜드브루도 들어오면 좋겠어요!")
@@ -298,9 +300,9 @@ with tab3:
             else:
                 st.caption("아직 등록된 글이 없습니다.")
         except Exception as e:
-            st.warning(f"방명력 데이터를 불러오지 못했습니다: {e}")
+            st.warning(f"방명록 데이터를 불러오지 못했습니다: {e}")
     else:
-        st.info("구글 시트 연동 상태를 확인해주세요.")
+        st.info("상단의 구글 시트 에러 메시지를 확인해주세요.")
 
 # -------------------------------------------------------------------
 # 6. 관리자용 메뉴 (사이드바)
