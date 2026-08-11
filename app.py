@@ -164,7 +164,6 @@ def init_gspread():
 
 gc = init_gspread()
 
-# 💡 실시간 재고 조회 함수 (캐싱 없이 매번 새로 읽도록 구성)
 def get_current_stock(_gc):
     if not _gc:
         return None, None, 0
@@ -213,18 +212,22 @@ st.markdown("<br>", unsafe_allow_html=True)
 
 tab1, tab2, tab3 = st.tabs(["☕ 카페 현황", "🏆 인기 투표", "💬 끄적끄적 방명록"])
 
-# --- [탭 1] 카페 현황 및 날씨 ---
+# --- [탭 1] 카페 현황 및 날씨 (💡 핵심 수정: 조건문 순서 개편) ---
 with tab1:
     st.markdown("<br>", unsafe_allow_html=True)
     
-    if not is_weekday or not is_opening_hours:
-        st.error("### 🌙 운영 시간 외\n사내 카페 운영 시간은 **평일 10:00 ~ 16:00** 입니다.\n내일 영업 시간에 만나요! ☕")
-    elif current_stock > 30:
+    # 관리자가 변경한 재고 상태를 '우선적'으로 반영하여 현황 안내
+    if current_stock > 30:
         st.success("### 🟢 여유 있어요!\n맛있는 커피가 넉넉하게 준비되어 있습니다. 천천히 오세요~ ☕")
-    elif current_stock > 0:
+    elif current_stock > 15:
         st.warning("### 🟡 마감 임박!\n오늘 준비된 커피가 얼마 남지 않았어요. 조금만 서둘러 주세요! 🏃‍♂️")
-    else:
+    elif current_stock == 0:
         st.error("### 🔴 금일 마감\n오늘 준비된 커피가 모두 소진되었습니다. 내일 더 맛있는 커피로 만나요! 🌙")
+    elif not is_weekday or not is_opening_hours:
+        # 상태 수동 설정이 특별히 지정되지 않은 경우 영업시간 조건 체크
+        st.error("### 🌙 운영 시간 외\n사내 카페 운영 시간은 **평일 10:00 ~ 16:00** 입니다.\n내일 영업 시간에 만나요! ☕")
+    else:
+        st.warning("### 🟡 마감 임박!\n오늘 준비된 커피가 얼마 남지 않았어요. 조금만 서둘러 주세요! 🏃‍♂️")
         
     st.markdown("<br>", unsafe_allow_html=True)
     
@@ -304,7 +307,7 @@ with tab3:
         st.info("구글 시트 연동 상태를 확인해주세요.")
 
 # -------------------------------------------------------------------
-# 6. 관리자용 메뉴 (사이드바) - 상태 변경 즉시 반영 로직 수정
+# 6. 관리자용 메뉴 (사이드바)
 # -------------------------------------------------------------------
 st.sidebar.title("🔐 관리자 메뉴")
 
@@ -331,12 +334,11 @@ else:
     else:
         current_status_text = "🔴 금일 마감"
         
-    st.sidebar.info(f"현재 반영된 상태: **{current_status_text}** (재고: {current_stock}잔)")
+    st.sidebar.info(f"현재 반영된 상태: **{current_status_text}** (재고 값: {current_stock})")
     st.sidebar.divider()
     
     st.sidebar.markdown("### 🛠️ 상태 변경하기")
     
-    # 💡 시트 B1 셀 업데이트 후 새로고침
     if st.sidebar.button("🟢 1단계: 여유 가득", use_container_width=True):
         if sheet:
             sheet.update_acell('B1', 200)
