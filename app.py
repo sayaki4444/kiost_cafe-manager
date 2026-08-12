@@ -366,7 +366,12 @@ with tab2:
     vote_raw_data = fetch_vote_data()
     if len(vote_raw_data) > 1:
         try:
-            vote_data = vote_raw_data[1:]
+            # 정렬 전에 시트의 실제 행 번호(2행부터 시작)를 각 항목에 붙여둔다.
+            # 이렇게 해야 이후 정렬로 순서가 바뀌어도 올바른 행을 업데이트할 수 있다.
+            vote_data = [
+                (row[0], row[1], sheet_row_num)
+                for sheet_row_num, row in enumerate(vote_raw_data[1:], start=2)
+            ]
             vote_data.sort(key=lambda x: int(x[1]), reverse=True)
             top3 = vote_data[:3]
             col1, col2, col3 = st.columns(3)
@@ -387,12 +392,11 @@ with tab2:
             with st.expander("👉 나도 최애 메뉴에 투표하기"):
                 st.caption("메뉴를 누르면 즉시 1표가 올라갑니다!")
                 vote_cols = st.columns(4)
-                for i, row in enumerate(vote_data):
-                    menu_name = row[0]
-                    current_votes = int(row[1])
+                for i, (menu_name, votes_str, sheet_row_num) in enumerate(vote_data):
+                    current_votes = int(votes_str)
                     if vote_cols[i % 4].button(menu_name, key=f"vote_{i}"):
                         if sheet_vote:
-                            sheet_vote.update_cell(i + 2, 2, current_votes + 1)
+                            sheet_vote.update_cell(sheet_row_num, 2, current_votes + 1)
                             st.cache_data.clear()
                             st.toast(f"{menu_name}에 투표하셨습니다! 🎉")
                             st.rerun()
@@ -441,7 +445,10 @@ if not st.session_state.is_admin_logged_in:
         "비밀번호를 입력하세요", type="password", key="admin_pw_input"
     )
     if st.sidebar.button("🔓 로그인", use_container_width=True, key="login_btn"):
-        if admin_pw == "0000":
+        correct_pw = st.secrets.get("admin", {}).get("password")
+        if not correct_pw:
+            st.sidebar.error("⚠️ secrets.toml에 관리자 비밀번호가 설정되지 않았습니다.")
+        elif admin_pw == correct_pw:
             st.session_state.is_admin_logged_in = True
             st.sidebar.success("인증 완료!")
             st.rerun()
