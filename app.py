@@ -597,9 +597,9 @@ else:
             sheet_stock.update_cell(1, 2, 15)
             st.cache_data.clear()
             # 💡 텔레그램 알람 전송
-            # send_telegram_alert(
-            #     "🏃‍♂️ **[소담터 카페]**\n오늘 준비된 커피가 얼마 남지 않았습니다! 조금만 서둘러 주세요! 🟡"
-            # )
+            send_telegram_alert(
+                 "🏃‍♂️ **[소담터 카페]**\n오늘 준비된 커피가 얼마 남지 않았습니다! 조금만 서둘러 주세요! 🟡"
+            )
             st.rerun()
 
     # 🔴 3단계 변경
