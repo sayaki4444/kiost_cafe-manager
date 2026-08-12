@@ -464,7 +464,7 @@ else:
     st.sidebar.markdown("### 🛠️ 상태 변경 및 알림 발송")
 
     # 🟢 1단계 변경
-    if st.sidebar.button("🟢 1단계: 이용가능 (200)", use_container_width=True):
+    if st.sidebar.button("🟢 1단계: 이용가능", use_container_width=True):
         if sheet_stock:
             sheet_stock.update_cell(1, 2, 200)
             st.cache_data.clear()
@@ -475,7 +475,7 @@ else:
             st.rerun()
 
     # 🟡 2단계 변경
-    if st.sidebar.button("🟡 2단계: 소진임박 (15)", use_container_width=True):
+    if st.sidebar.button("🟡 2단계: 소진임박", use_container_width=True):
         if sheet_stock:
             sheet_stock.update_cell(1, 2, 15)
             st.cache_data.clear()
@@ -486,7 +486,7 @@ else:
             st.rerun()
 
     # 🔴 3단계 변경
-    if st.sidebar.button("🔴 3단계: 카페마감 (0)", use_container_width=True):
+    if st.sidebar.button("🔴 3단계: 카페마감", use_container_width=True):
         if sheet_stock:
             sheet_stock.update_cell(1, 2, 0)
             st.cache_data.clear()
