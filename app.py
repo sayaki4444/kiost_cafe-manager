@@ -191,9 +191,13 @@ doc, sheet_stock, sheet_vote, sheet_guest = get_sheets(gc)
 def fetch_stock_data():
     if sheet_stock:
         try:
-            return int(sheet_stock.acell("B1").value)
-        except:
+            value = int(sheet_stock.acell("B1").value)
+            st.session_state.pop("stock_fetch_error", None)
+            return value
+        except Exception as e:
+            st.session_state["stock_fetch_error"] = str(e)
             return 0
+    st.session_state["stock_fetch_error"] = "구글 시트에 연결되지 않았습니다."
     return 0
 
 
@@ -201,8 +205,11 @@ def fetch_stock_data():
 def fetch_vote_data():
     if sheet_vote:
         try:
-            return sheet_vote.get_all_values()
-        except:
+            data = sheet_vote.get_all_values()
+            st.session_state.pop("vote_fetch_error", None)
+            return data
+        except Exception as e:
+            st.session_state["vote_fetch_error"] = str(e)
             return []
     return []
 
@@ -211,8 +218,11 @@ def fetch_vote_data():
 def fetch_guest_data():
     if sheet_guest:
         try:
-            return sheet_guest.get_all_values()
-        except:
+            data = sheet_guest.get_all_values()
+            st.session_state.pop("guest_fetch_error", None)
+            return data
+        except Exception as e:
+            st.session_state["guest_fetch_error"] = str(e)
             return []
     return []
 
@@ -332,6 +342,11 @@ tab1, tab2, tab3 = st.tabs(["☕ 카페 현황", "🏆 인기 투표", "💬 끄
 
 with tab1:
     st.markdown("<br>", unsafe_allow_html=True)
+    if st.session_state.get("stock_fetch_error"):
+        st.warning(
+            f"⚠️ 재고 데이터를 불러오지 못해 임시로 마감 상태로 표시 중입니다. "
+            f"(오류: {st.session_state['stock_fetch_error']})"
+        )
     if not is_weekday or not is_opening_hours:
         st.info("💡 현재는 **운영 시간(평일 10:00 ~ 16:00) 외** 시간입니다.")
 
@@ -364,6 +379,10 @@ with tab2:
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("### 🏆 가장 사랑받는 메뉴 TOP 3")
     vote_raw_data = fetch_vote_data()
+    if st.session_state.get("vote_fetch_error"):
+        st.warning(
+            f"⚠️ 투표 데이터를 불러오지 못했습니다. (오류: {st.session_state['vote_fetch_error']})"
+        )
     if len(vote_raw_data) > 1:
         try:
             # 정렬 전에 시트의 실제 행 번호(2행부터 시작)를 각 항목에 붙여둔다.
@@ -406,6 +425,10 @@ with tab2:
 with tab3:
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("### 💬 끄적끄적 한줄 게시판")
+    if st.session_state.get("guest_fetch_error"):
+        st.warning(
+            f"⚠️ 방명록 데이터를 불러오지 못했습니다. (오류: {st.session_state['guest_fetch_error']})"
+        )
     if sheet_guest:
         try:
             with st.form("guestbook_form", clear_on_submit=True):
