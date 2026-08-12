@@ -5,7 +5,9 @@ import pytz
 import gspread
 import json
 
+# -------------------------------------------------------------------
 # 1. 페이지 기본 설정
+# -------------------------------------------------------------------
 st.set_page_config(
     page_title="소담터 - 사내 카페",
     page_icon="☕",
@@ -13,14 +15,19 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# 2. 커스텀 CSS
+# -------------------------------------------------------------------
+# 2. 커스텀 CSS (PC 모바일 뷰 고정 + 모던 다크 테마)
+# -------------------------------------------------------------------
 custom_css = """
 <style>
+    /* 전체 배경 (어두운 그래디언트) */
     .stApp {
         background: linear-gradient(135deg, #090a0f 0%, #12131c 100%);
         color: #ffffff;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
+    
+    /* PC 접속 시 화면 중앙에 모바일 크기로 고정 */
     .main .block-container {
         max-width: 430px !important;
         padding-top: 1.5rem !important;
@@ -29,10 +36,14 @@ custom_css = """
         padding-right: 1rem !important;
         margin: 0 auto;
     }
+
+    /* Streamlit 기본 푸터 숨기기 */
     footer {
         visibility: hidden !important;
         height: 0px !important;
     }
+
+    /* 상단 프로필/시간 헤더 */
     .top-header {
         display: flex;
         justify-content: space-between;
@@ -49,6 +60,8 @@ custom_css = """
         font-size: 13px;
         color: #8E8EA0;
     }
+
+    /* 버튼 모던 스타일 재정의 */
     .stButton > button {
         background-color: #212232 !important;
         color: #e2e8f0 !important;
@@ -64,12 +77,16 @@ custom_css = """
         border-color: #c084fc !important;
         color: #ffffff !important;
     }
+
+    /* 입력 폼 다크 스타일화 */
     .stTextInput > div > div > input {
         background-color: #181926 !important;
         color: #ffffff !important;
         border-radius: 12px !important;
         border: 1px solid rgba(255, 255, 255, 0.1) !important;
     }
+
+    /* 탭(Tab) 디자인 커스텀 */
     .stTabs [data-baseweb="tab-list"] {
         gap: 8px;
         background-color: #13141f;
@@ -87,6 +104,8 @@ custom_css = """
         background-color: #3b2d54 !important;
         color: #ffffff !important;
     }
+
+    /* Metric 및 Alert 카드 스타일 다크 톤 맞춤 */
     [data-testid="stMetricValue"] {
         color: #c084fc !important;
     }
@@ -97,11 +116,10 @@ custom_css = """
     }
 </style>
 """
-
 st.markdown(custom_css, unsafe_allow_html=True)
 
 # -------------------------------------------------------------------
-# 3. 데이터 및 시간 처리 / 구글 시트 연동
+# 3. 데이터 및 구글 시트 연동 (API 429 에러 방지 Caching 적용)
 # -------------------------------------------------------------------
 
 now_kst = datetime.now(pytz.timezone('Asia/Seoul'))
@@ -117,14 +135,11 @@ SCOPES = [
 ]
 
 @st.cache_resource
-def init_gspread():
+def get_gspread_client():
     try:
         if "gcp_service_account" in st.secrets:
             secret_data = st.secrets["gcp_service_account"]
-            if isinstance(secret_data, str):
-                creds_dict = json.loads(secret_data)
-            else:
-                creds_dict = dict(secret_data)
+            creds_dict = json.loads(secret_data) if isinstance(secret_data, str) else dict(secret_data)
             return gspread.service_account_from_dict(creds_dict, scopes=SCOPES)
         else:
             return gspread.service_account(filename="service_account.json", scopes=SCOPES)
@@ -132,27 +147,53 @@ def init_gspread():
         st.error(f"🔑 구글 API 인증 오류: {e}")
         return None
 
-gc = init_gspread()
+gc = get_gspread_client()
 
-def get_current_stock_from_sheet(_gc):
+@st.cache_resource
+def get_sheets(_gc):
     if not _gc:
-        return None, None, 0
+        return None, None, None, None
     try:
         doc = _gc.open("kiost_sodam")
-        sheet = doc.worksheet("재고")
-        stock_val = int(sheet.acell('B1').value)
-        return doc, sheet, stock_val
+        sheet_stock = doc.worksheet("재고")
+        sheet_vote = doc.worksheet("투표")
+        sheet_guest = doc.worksheet("방명록")
+        return doc, sheet_stock, sheet_vote, sheet_guest
     except Exception as e:
-        st.error(f"📄 구글 시트 읽기 실패: {e}")
-        return None, None, 0
+        st.error(f"📄 구글 시트 워크시트 로드 실패: {e}")
+        return None, None, None, None
 
-doc, sheet, fetched_stock = get_current_stock_from_sheet(gc)
+doc, sheet_stock, sheet_vote, sheet_guest = get_sheets(gc)
 
-# Session State를 이용해 즉시 반영 보장
-if "current_stock" not in st.session_state:
-    st.session_state.current_stock = fetched_stock
+# --- 💡 API 호출 최소화를 위한 Data Fetching 캐시 함수 (10초 유지) ---
+@st.cache_data(ttl=10)
+def fetch_stock_data():
+    if sheet_stock:
+        try:
+            return int(sheet_stock.acell('B1').value)
+        except:
+            return 0
+    return 0
 
-current_stock = st.session_state.current_stock
+@st.cache_data(ttl=10)
+def fetch_vote_data():
+    if sheet_vote:
+        try:
+            return sheet_vote.get_all_values()
+        except:
+            return []
+    return []
+
+@st.cache_data(ttl=10)
+def fetch_guest_data():
+    if sheet_guest:
+        try:
+            return sheet_guest.get_all_values()
+        except:
+            return []
+    return []
+
+current_stock = fetch_stock_data()
 
 # -------------------------------------------------------------------
 # 4. 상태별 색상 및 문구 동적 계산 (재고 수량 기준)
@@ -187,7 +228,7 @@ else:
     badge_color = "#ef4444"
 
 # -------------------------------------------------------------------
-# 5. 상단 UI 헤더 및 메인 원형 카드
+# 5. 상단 UI 헤더 및 동적 원형 카드
 # -------------------------------------------------------------------
 
 st.markdown("""
@@ -202,7 +243,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# 관리자 설정 상태에 따른 동적 원형 카드
+# 관리자 설정 상태에 맞춘 동적 디자인 원형 카드
 st.markdown(f"""
 <div style="
     background: {theme_bg};
@@ -273,10 +314,10 @@ with tab2:
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("### 🏆 가장 사랑받는 메뉴 TOP 3")
     
-    if doc:
+    vote_raw_data = fetch_vote_data()
+    if len(vote_raw_data) > 1:
         try:
-            sheet_vote = doc.worksheet("투표")
-            vote_data = sheet_vote.get_all_values()[1:]
+            vote_data = vote_raw_data[1:]
             vote_data.sort(key=lambda x: int(x[1]), reverse=True)
             top3 = vote_data[:3]
             
@@ -296,23 +337,23 @@ with tab2:
                     menu_name = row[0]
                     current_votes = int(row[1])
                     if vote_cols[i % 4].button(menu_name, key=f"vote_{i}"):
-                        sheet_vote.update_cell(i + 2, 2, current_votes + 1)
-                        st.toast(f"{menu_name}에 투표하셨습니다! 🎉")
-                        st.rerun()
+                        if sheet_vote:
+                            sheet_vote.update_cell(i + 2, 2, current_votes + 1)
+                            st.cache_data.clear()  # 💡 데이터 수정 후 즉시 캐시 초기화
+                            st.toast(f"{menu_name}에 투표하셨습니다! 🎉")
+                            st.rerun()
         except Exception as e:
-            st.warning(f"투표 데이터를 불러오지 못했습니다: {e}")
+            st.warning(f"투표 데이터를 처리하는 중 오류 발생: {e}")
     else:
-        st.info("구글 시트 연동 상태를 확인해주세요.")
+        st.info("구글 시트 투표 데이터를 연동 중입니다.")
 
 # --- [탭 3] 한줄 게시판 (방명록) ---
 with tab3:
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("### 💬 끄적끄적 한줄 게시판")
     
-    if doc:
+    if sheet_guest:
         try:
-            sheet_guest = doc.worksheet("방명록")
-            
             with st.form("guestbook_form", clear_on_submit=True):
                 new_comment = st.text_input("메뉴 건의나 응원의 한마디를 남겨주세요!", placeholder="예: 시원한 콜드브루도 들어오면 좋겠어요!")
                 submitted = st.form_submit_button("등록하기")
@@ -320,10 +361,11 @@ with tab3:
                 if submitted and new_comment:
                     kst = datetime.now(pytz.timezone('Asia/Seoul')).strftime("%m-%d %H:%M")
                     sheet_guest.append_row([kst, new_comment])
+                    st.cache_data.clear()  # 💡 새 방명록 추가 후 즉시 캐시 초기화
                     st.success("소중한 의견이 등록되었습니다!")
                     st.rerun()
                     
-            guest_data = sheet_guest.get_all_values()
+            guest_data = fetch_guest_data()
             if len(guest_data) > 1:
                 data_rows = guest_data[1:]
                 st.markdown("##### 💌 최근 남겨진 이야기")
@@ -370,22 +412,22 @@ else:
     st.sidebar.markdown("### 🛠️ 상태 변경하기")
     
     if st.sidebar.button("🟢 1단계: 이용가능 (200)", use_container_width=True):
-        st.session_state.current_stock = 200
-        if sheet:
-            sheet.update_cell(1, 2, 200)
-        st.rerun()
+        if sheet_stock:
+            sheet_stock.update_cell(1, 2, 200)
+            st.cache_data.clear()  # 💡 상태 변경 후 즉시 캐시 초기화
+            st.rerun()
         
     if st.sidebar.button("🟡 2단계: 소진임박 (15)", use_container_width=True):
-        st.session_state.current_stock = 15
-        if sheet:
-            sheet.update_cell(1, 2, 15)
-        st.rerun()
+        if sheet_stock:
+            sheet_stock.update_cell(1, 2, 15)
+            st.cache_data.clear()  # 💡 상태 변경 후 즉시 캐시 초기화
+            st.rerun()
         
     if st.sidebar.button("🔴 3단계: 카페마감 (0)", use_container_width=True):
-        st.session_state.current_stock = 0
-        if sheet:
-            sheet.update_cell(1, 2, 0)
-        st.rerun()
+        if sheet_stock:
+            sheet_stock.update_cell(1, 2, 0)
+            st.cache_data.clear()  # 💡 상태 변경 후 즉시 캐시 초기화
+            st.rerun()
 
     st.sidebar.divider()
     if st.sidebar.button("🔒 로그아웃", use_container_width=True):
