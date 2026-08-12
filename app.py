@@ -20,10 +20,23 @@ st.set_page_config(
 # -------------------------------------------------------------------
 custom_css = """
 <style>
+    @import url('https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap');
+
+    :root {
+        --bg-base: #120d0a;
+        --bg-elevated: #1c140f;
+        --bg-card: #1f1712;
+        --accent: #c17a3d;
+        --accent-light: #e0a458;
+        --text-primary: #f5ece0;
+        --text-secondary: #b3a08c;
+        --border-soft: rgba(245, 236, 224, 0.08);
+    }
+
     .stApp {
-        background: linear-gradient(135deg, #090a0f 0%, #12131c 100%);
-        color: #ffffff;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background: linear-gradient(160deg, var(--bg-base) 0%, #1a120d 100%);
+        color: var(--text-primary);
+        font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
     .main .block-container {
         max-width: 430px !important;
@@ -44,60 +57,112 @@ custom_css = """
         margin-bottom: 20px;
     }
     .header-title {
-        font-size: 26px;
+        font-family: 'Gaegu', cursive;
+        font-size: 28px;
         font-weight: 700;
-        color: #ffffff;
+        color: var(--text-primary);
         margin: 0;
     }
     .header-sub {
         font-size: 13px;
-        color: #8E8EA0;
+        color: var(--text-secondary);
     }
     .stButton > button {
-        background-color: #212232 !important;
-        color: #e2e8f0 !important;
+        background-color: var(--bg-card) !important;
+        color: var(--text-primary) !important;
         border-radius: 14px !important;
-        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border: 1px solid var(--border-soft) !important;
         padding: 8px 16px !important;
         width: 100%;
         font-weight: 600;
         transition: all 0.2s ease;
     }
     .stButton > button:hover {
-        background-color: #3b2d54 !important;
-        border-color: #c084fc !important;
-        color: #ffffff !important;
+        background-color: var(--accent) !important;
+        border-color: var(--accent-light) !important;
+        color: #1a120d !important;
     }
     .stTextInput > div > div > input {
-        background-color: #181926 !important;
-        color: #ffffff !important;
+        background-color: var(--bg-elevated) !important;
+        color: var(--text-primary) !important;
         border-radius: 12px !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        border: 1px solid var(--border-soft) !important;
     }
     .stTabs [data-baseweb="tab-list"] {
         gap: 8px;
-        background-color: #13141f;
+        background-color: var(--bg-elevated);
         padding: 6px;
         border-radius: 16px;
     }
     .stTabs [data-baseweb="tab"] {
         height: 40px;
         border-radius: 12px;
-        color: #8E8EA0;
+        color: var(--text-secondary);
         font-weight: 600;
         border: none !important;
     }
     .stTabs [aria-selected="true"] {
-        background-color: #3b2d54 !important;
-        color: #ffffff !important;
+        background-color: var(--accent) !important;
+        color: #1a120d !important;
     }
     [data-testid="stMetricValue"] {
-        color: #c084fc !important;
+        color: var(--accent-light) !important;
     }
     .stAlert {
         border-radius: 16px !important;
-        background-color: #181926 !important;
-        border: 1px solid rgba(255,255,255,0.08) !important;
+        background-color: var(--bg-card) !important;
+        border: 1px solid var(--border-soft) !important;
+    }
+
+    /* 커피잔 + 증기 시그니처 일러스트 */
+    .cup-card {
+        border-radius: 28px;
+        padding: 26px 20px 20px;
+        margin: 20px auto;
+        max-width: 300px;
+        text-align: center;
+        transition: all 0.4s ease;
+    }
+    .cup-illustration {
+        width: 130px;
+        height: auto;
+        display: block;
+        margin: 0 auto;
+    }
+    .steam {
+        transform-origin: center bottom;
+        animation: steamRise 3s ease-in-out infinite;
+    }
+    .steam:nth-child(2) { animation-delay: 0.4s; }
+    .steam:nth-child(3) { animation-delay: 0.8s; }
+    @keyframes steamRise {
+        0%   { transform: translateY(0) scaleY(1); }
+        50%  { transform: translateY(-6px) scaleY(1.08); }
+        100% { transform: translateY(0) scaleY(1); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .steam { animation: none; }
+    }
+    .cup-title {
+        font-family: 'Gaegu', cursive;
+        font-size: 32px;
+        font-weight: 700;
+        color: var(--text-primary);
+        letter-spacing: -0.5px;
+        margin-top: 4px;
+    }
+    .cup-hours {
+        font-size: 12px;
+        color: var(--text-secondary);
+        margin-bottom: 10px;
+    }
+    .cup-badge {
+        display: inline-block;
+        font-size: 13px;
+        font-weight: 700;
+        padding: 4px 14px;
+        border-radius: 12px;
+        border: 1px solid;
     }
 </style>
 """
@@ -233,33 +298,62 @@ current_stock = fetch_stock_data()
 # 5. 상태별 테마 계산
 # -------------------------------------------------------------------
 
+# 신호등 색상(초록/노랑/빨강)은 상태를 직관적으로 전달하는 기능색이라 그대로 유지하고,
+# 카드 배경은 보라색 계열 대신 커피 테마에 맞는 다크 브라운 톤으로 옮긴다.
 if current_stock > 30:
-    theme_bg = "radial-gradient(circle at 50% 30%, #1c3d2a 0%, #13141f 75%)"
-    theme_shadow = "0 10px 40px rgba(34, 197, 94, 0.3)"
-    theme_border = "rgba(34, 197, 94, 0.5)"
-    theme_subtext_color = "#4ade80"
+    theme_card_bg = "radial-gradient(circle at 50% 15%, rgba(34, 197, 94, 0.10) 0%, var(--bg-card) 70%)"
+    theme_shadow = "0 10px 34px rgba(34, 197, 94, 0.12)"
+    theme_border = "rgba(34, 197, 94, 0.35)"
     status_label = "🟢 이용가능"
     badge_bg = "rgba(34, 197, 94, 0.15)"
     badge_color = "#22c55e"
+    cup_fill_y = 55       # 커피가 잔 위쪽까지 가득
+    steam_visible = True
+    steam_opacity = 0.85
 elif current_stock > 0:
-    theme_bg = "radial-gradient(circle at 50% 30%, #3d331c 0%, #13141f 75%)"
-    theme_shadow = "0 10px 40px rgba(234, 179, 8, 0.3)"
-    theme_border = "rgba(234, 179, 8, 0.5)"
-    theme_subtext_color = "#facc15"
+    theme_card_bg = "radial-gradient(circle at 50% 15%, rgba(234, 179, 8, 0.10) 0%, var(--bg-card) 70%)"
+    theme_shadow = "0 10px 34px rgba(234, 179, 8, 0.12)"
+    theme_border = "rgba(234, 179, 8, 0.35)"
     status_label = "🟡 소진임박"
     badge_bg = "rgba(234, 179, 8, 0.15)"
     badge_color = "#eab308"
+    cup_fill_y = 100      # 절반 정도 남음
+    steam_visible = True
+    steam_opacity = 0.4
 else:
-    theme_bg = "radial-gradient(circle at 50% 30%, #3d1c1c 0%, #13141f 75%)"
-    theme_shadow = "0 10px 40px rgba(239, 68, 68, 0.3)"
-    theme_border = "rgba(239, 68, 68, 0.5)"
-    theme_subtext_color = "#f87171"
+    theme_card_bg = "radial-gradient(circle at 50% 15%, rgba(239, 68, 68, 0.10) 0%, var(--bg-card) 70%)"
+    theme_shadow = "0 10px 34px rgba(239, 68, 68, 0.12)"
+    theme_border = "rgba(239, 68, 68, 0.35)"
     status_label = "🔴 카페마감"
     badge_bg = "rgba(239, 68, 68, 0.15)"
     badge_color = "#ef4444"
+    cup_fill_y = 140      # 커피 없음(빈 잔)
+    steam_visible = False
+    steam_opacity = 0
+
+# 커피 채움 도형과 증기(steam) SVG 조각을 미리 조립
+_coffee_height = 140 - cup_fill_y
+coffee_fill_svg = (
+    f'<rect x="20" y="{cup_fill_y}" width="120" height="{_coffee_height}" '
+    f'fill="var(--accent)" clip-path="url(#mugClip)" />'
+    if _coffee_height > 0
+    else ""
+)
+
+if steam_visible:
+    steam_svg = f"""
+        <path class="steam" style="opacity:{steam_opacity};" d="M55,35 C48,25 62,15 55,5"
+              stroke="var(--accent-light)" stroke-width="4" stroke-linecap="round" fill="none" />
+        <path class="steam" style="opacity:{steam_opacity};" d="M80,35 C73,25 87,15 80,3"
+              stroke="var(--accent-light)" stroke-width="4" stroke-linecap="round" fill="none" />
+        <path class="steam" style="opacity:{steam_opacity};" d="M105,35 C98,25 112,15 105,5"
+              stroke="var(--accent-light)" stroke-width="4" stroke-linecap="round" fill="none" />
+    """
+else:
+    steam_svg = ""
 
 # -------------------------------------------------------------------
-# 6. 상단 UI 및 동적 원형 카드 (텔레그램 링크 버튼 반영)
+# 6. 상단 UI 및 커피잔 시그니처 카드 (텔레그램 링크 버튼 반영)
 # -------------------------------------------------------------------
 
 # 👈 본인의 텔레그램 채널 공개 링크 주소로 변경하세요
@@ -268,8 +362,8 @@ st.markdown(
     f"""
 <div class="top-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
     <div>
-        <div class="header-title" style="font-size: 26px; font-weight: 700; color: #ffffff; margin: 0;">Good day ☕</div>
-        <div class="header-sub" style="font-size: 13px; color: #8E8EA0; margin-top: 2px;">Sodam-teo Cafe</div>
+        <div class="header-title" style="margin: 0;">Good day ☕</div>
+        <div class="header-sub" style="margin-top: 2px;">Sodam-teo Cafe</div>
     </div>
     <a href="{telegram_channel_url}" target="_blank" style="text-decoration: none; display: flex; flex-direction: column; align-items: center;">
         <div style="
@@ -297,34 +391,23 @@ st.markdown(
 
 st.markdown(
     f"""
-<div style="
-    background: {theme_bg};
-    border-radius: 50%;
-    width: 260px;
-    height: 260px;
-    margin: 20px auto;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    box-shadow: {theme_shadow}, inset 0 0 15px rgba(255, 255, 255, 0.05);
-    border: 1px solid {theme_border};
-    transition: all 0.4s ease;
-">
-    <div style="font-size: 13px; color: {theme_subtext_color}; margin-bottom: 4px; font-weight: 600;">☕ Cafe Status</div>
-    <div style="font-size: 32px; font-weight: 800; color: #ffffff; letter-spacing: -1px; margin-bottom: 4px;">
-        소담터
-    </div>
-    <div style="font-size: 12px; color: #8E8EA0; margin-bottom: 8px;">운영시간 10:00 - 16:00</div>
-    <div style="
-        font-size: 13px;
-        font-weight: 700;
-        color: {badge_color};
-        background: {badge_bg};
-        padding: 4px 14px;
-        border-radius: 12px;
-        border: 1px solid {badge_color}40;
-    ">
+<div class="cup-card" style="background: {theme_card_bg}; box-shadow: {theme_shadow}; border: 1px solid {theme_border};">
+    <svg class="cup-illustration" viewBox="0 0 160 170" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <clipPath id="mugClip">
+                <path d="M25,40 L135,40 L127,132 Q127,140 119,140 L41,140 Q33,140 33,132 Z" />
+            </clipPath>
+        </defs>
+        {steam_svg}
+        {coffee_fill_svg}
+        <path d="M25,40 L135,40 L127,132 Q127,140 119,140 L41,140 Q33,140 33,132 Z"
+              fill="none" stroke="#e8dcc8" stroke-width="4" stroke-linejoin="round" />
+        <path d="M135,55 C165,55 165,105 135,105"
+              fill="none" stroke="#e8dcc8" stroke-width="6" stroke-linecap="round" />
+    </svg>
+    <div class="cup-title">소담터</div>
+    <div class="cup-hours">운영시간 10:00 - 16:00</div>
+    <div class="cup-badge" style="color: {badge_color}; background: {badge_bg}; border-color: {badge_color}40;">
         {status_label}
     </div>
 </div>
