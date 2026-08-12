@@ -13,7 +13,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# 2. PC 모바일 뷰 고정 + 모던 다크 테마 커스텀 CSS
+# 2. PC 모바일 뷰 고정 + 기본 다크 테마 커스텀 CSS
 custom_css = """
 <style>
     /* 전체 배경 (어두운 그래디언트) */
@@ -55,21 +55,6 @@ custom_css = """
     .header-sub {
         font-size: 13px;
         color: #8E8EA0;
-    }
-
-    /* 중앙 메인 원형 카드 */
-    .main-circle-card {
-        background: radial-gradient(circle at 50% 30%, #32234d 0%, #13141f 75%);
-        border-radius: 50%;
-        width: 260px;
-        height: 260px;
-        margin: 20px auto;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        box-shadow: 0 10px 40px rgba(147, 51, 234, 0.2), inset 0 0 15px rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
     /* 버튼 모던 스타일 재정의 */
@@ -179,7 +164,47 @@ def get_current_stock(_gc):
 doc, sheet, current_stock = get_current_stock(gc)
 
 # -------------------------------------------------------------------
-# 4. 상단 UI 헤더 및 메인 그래픽
+# 4. 상태별 색상 및 문구 계산 (동적 테마 연동)
+# -------------------------------------------------------------------
+if not is_weekday or not is_opening_hours:
+    # 영업시간 외
+    theme_bg = "radial-gradient(circle at 50% 30%, #3d1c1c 0%, #13141f 75%)"
+    theme_shadow = "0 10px 40px rgba(239, 68, 68, 0.25)"
+    theme_border = "rgba(239, 68, 68, 0.4)"
+    theme_subtext_color = "#f87171"
+    status_label = "🔴 카페마감"
+    badge_bg = "rgba(239, 68, 68, 0.15)"
+    badge_color = "#ef4444"
+elif current_stock > 30:
+    # 🟢 1단계: 여유 가득
+    theme_bg = "radial-gradient(circle at 50% 30%, #1c3d2a 0%, #13141f 75%)"
+    theme_shadow = "0 10px 40px rgba(34, 197, 94, 0.25)"
+    theme_border = "rgba(34, 197, 94, 0.4)"
+    theme_subtext_color = "#4ade80"
+    status_label = "🟢 이용가능"
+    badge_bg = "rgba(34, 197, 94, 0.15)"
+    badge_color = "#22c55e"
+elif current_stock > 0:
+    # 🟡 2단계: 마감 임박
+    theme_bg = "radial-gradient(circle at 50% 30%, #3d331c 0%, #13141f 75%)"
+    theme_shadow = "0 10px 40px rgba(234, 179, 8, 0.25)"
+    theme_border = "rgba(234, 179, 8, 0.4)"
+    theme_subtext_color = "#facc15"
+    status_label = "🟡 소진임박"
+    badge_bg = "rgba(234, 179, 8, 0.15)"
+    badge_color = "#eab308"
+else:
+    # 🔴 3단계: 금일 마감
+    theme_bg = "radial-gradient(circle at 50% 30%, #3d1c1c 0%, #13141f 75%)"
+    theme_shadow = "0 10px 40px rgba(239, 68, 68, 0.25)"
+    theme_border = "rgba(239, 68, 68, 0.4)"
+    theme_subtext_color = "#f87171"
+    status_label = "🔴 카페마감"
+    badge_bg = "rgba(239, 68, 68, 0.15)"
+    badge_color = "#ef4444"
+
+# -------------------------------------------------------------------
+# 5. 상단 UI 헤더 및 동적 원형 카드
 # -------------------------------------------------------------------
 
 st.markdown("""
@@ -194,38 +219,59 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-st.markdown("""
-<div class="main-circle-card">
-    <div style="font-size: 13px; color: #c084fc; margin-bottom: 6px;">☕ Cafe Status</div>
-    <div style="font-size: 32px; font-weight: 800; color: #ffffff; letter-spacing: -1px;">
+# 관리자가 변경하는 상태에 맞춰 색상과 문구가 동적으로 바뀌는 메인 원형 카드
+st.markdown(f"""
+<div style="
+    background: {theme_bg};
+    border-radius: 50%;
+    width: 260px;
+    height: 260px;
+    margin: 20px auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    box-shadow: {theme_shadow}, inset 0 0 15px rgba(255, 255, 255, 0.05);
+    border: 1px solid {theme_border};
+    transition: all 0.5s ease;
+">
+    <div style="font-size: 13px; color: {theme_subtext_color}; margin-bottom: 4px; font-weight: 600;">☕ Cafe Status</div>
+    <div style="font-size: 32px; font-weight: 800; color: #ffffff; letter-spacing: -1px; margin-bottom: 4px;">
         소담터
     </div>
-    <div style="font-size: 12px; color: #8E8EA0; margin-top: 6px;">운영시간 10:00 - 16:00</div>
+    <div style="font-size: 12px; color: #8E8EA0; margin-bottom: 8px;">운영시간 10:00 - 16:00</div>
+    <div style="
+        font-size: 13px;
+        font-weight: 700;
+        color: {badge_color};
+        background: {badge_bg};
+        padding: 3px 12px;
+        border-radius: 12px;
+        border: 1px solid {badge_color}40;
+    ">
+        {status_label}
+    </div>
 </div>
 """, unsafe_allow_html=True)
 
 st.markdown("<br>", unsafe_allow_html=True)
 
 # -------------------------------------------------------------------
-# 5. 탭(Tab) 메뉴 기능
+# 6. 탭(Tab) 메뉴 기능
 # -------------------------------------------------------------------
 
 tab1, tab2, tab3 = st.tabs(["☕ 카페 현황", "🏆 인기 투표", "💬 끄적끄적 방명록"])
 
-# --- [탭 1] 카페 현황 및 날씨 (💡 관리자 단계별 색상 완벽 일치) ---
+# --- [탭 1] 카페 현황 및 날씨 ---
 with tab1:
     st.markdown("<br>", unsafe_allow_html=True)
     
-    # 🟢 1단계 (200 설정 시): 여유 가득 (녹색)
     if current_stock > 30:
         st.success("### 🟢 여유 있어요!\n맛있는 커피가 넉넉하게 준비되어 있습니다. 천천히 오세요~ ☕")
-    # 🟡 2단계 (15 설정 시): 마감 임박 (노랑)
     elif current_stock > 0:
         st.warning("### 🟡 마감 임박!\n오늘 준비된 커피가 얼마 남지 않았어요. 조금만 서둘러 주세요! 🏃‍♂️")
-    # 🔴 3단계 (0 설정 시): 금일 마감 (빨강)
     elif current_stock == 0 and (is_weekday and is_opening_hours):
         st.error("### 🔴 금일 마감\n오늘 준비된 커피가 모두 소진되었습니다. 내일 더 맛있는 커피로 만나요! 🌙")
-    # 🌙 운영시간 외 기본 문구
     elif not is_weekday or not is_opening_hours:
         st.error("### 🌙 운영 시간 외\n사내 카페 운영 시간은 **평일 10:00 ~ 16:00** 입니다.\n내일 영업 시간에 만나요! ☕")
     else:
@@ -309,7 +355,7 @@ with tab3:
         st.info("구글 시트 연동 상태를 확인해주세요.")
 
 # -------------------------------------------------------------------
-# 6. 관리자용 메뉴 (사이드바)
+# 7. 관리자용 메뉴 (사이드바)
 # -------------------------------------------------------------------
 st.sidebar.title("🔐 관리자 메뉴")
 
@@ -330,28 +376,28 @@ else:
     st.sidebar.success("인증 완료 상태입니다.")
     
     if current_stock > 30:
-        current_status_text = "🟢 여유 가득"
+        current_status_text = "🟢 이용가능"
     elif current_stock > 0:
-        current_status_text = "🟡 마감 임박"
+        current_status_text = "🟡 소진임박"
     else:
-        current_status_text = "🔴 금일 마감"
+        current_status_text = "🔴 카페마감"
         
     st.sidebar.info(f"현재 반영된 상태: **{current_status_text}**")
     st.sidebar.divider()
     
     st.sidebar.markdown("### 🛠️ 상태 변경하기")
     
-    if st.sidebar.button("🟢 1단계: 여유 가득", use_container_width=True):
+    if st.sidebar.button("🟢 1단계: 이용가능 (200)", use_container_width=True):
         if sheet:
             sheet.update_acell('B1', 200)
             st.rerun()
         
-    if st.sidebar.button("🟡 2단계: 마감 임박", use_container_width=True):
+    if st.sidebar.button("🟡 2단계: 소진임박 (15)", use_container_width=True):
         if sheet:
             sheet.update_acell('B1', 15)
             st.rerun()
         
-    if st.sidebar.button("🔴 3단계: 금일 마감", use_container_width=True):
+    if st.sidebar.button("🔴 3단계: 카페마감 (0)", use_container_width=True):
         if sheet:
             sheet.update_acell('B1', 0)
             st.rerun()
