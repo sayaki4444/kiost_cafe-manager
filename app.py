@@ -1,5 +1,5 @@
-import json
 from datetime import datetime
+import json
 import gspread
 import pytz
 import requests
@@ -110,12 +110,10 @@ st.markdown(custom_css, unsafe_allow_html=True)
 
 def send_telegram_alert(message):
     try:
-        # st.secrets에 등록된 정보 읽기 (없을 경우 하드코딩 대체 가능)
         if "telegram" in st.secrets:
             bot_token = st.secrets["telegram"]["bot_token"]
             chat_id = st.secrets["telegram"]["chat_id"]
         else:
-            # secrets 설정을 안 한 경우 여기에 직접 입력
             bot_token = "여기에_봇토큰_입력"
             chat_id = "여기에_채널아이디_입력"
 
@@ -251,19 +249,42 @@ else:
     badge_color = "#ef4444"
 
 # -------------------------------------------------------------------
-# 6. 상단 UI 및 동적 원형 카드
+# 6. 상단 UI 및 동적 원형 카드 (텔레그램 링크 버튼 반영)
 # -------------------------------------------------------------------
 
+# 👈 본인의 텔레그램 채널 공개 링크 주소로 변경하세요
+telegram_channel_url = "https://t.me/+n5J-xg8BI4tkYmE1"
+
 st.markdown(
-    """
-<div class="top-header">
+    f"""
+<div class="top-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+    <!-- 좌측 타이틀 영역 -->
     <div>
-        <div class="header-title">Good day ☕</div>
-        <div class="header-sub">Sodam-teo Cafe</div>
+        <div class="header-title" style="font-size: 26px; font-weight: 700; color: #ffffff; margin: 0;">Good day ☕</div>
+        <div class="header-sub" style="font-size: 13px; color: #8E8EA0; margin-top: 2px;">Sodam-teo Cafe</div>
     </div>
-    <div style="width: 40px; height: 40px; border-radius: 50%; background: #3b2d54; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.2);">
-        ☕
-    </div>
+    
+    <!-- 우측 텔레그램 버튼 및 하단 라벨 영역 -->
+    <a href="{telegram_channel_url}" target="_blank" style="text-decoration: none; display: flex; flex-direction: column; align-items: center;">
+        <div style="
+            width: 42px; 
+            height: 42px; 
+            border-radius: 50%; 
+            background: rgba(42, 171, 238, 0.15); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            border: 1px solid rgba(42, 171, 238, 0.4); 
+            font-size: 20px;
+            box-shadow: 0 4px 12px rgba(42, 171, 238, 0.2);
+            transition: transform 0.2s ease;
+        ">
+            ✈️
+        </div>
+        <div style="font-size: 11px; color: #2AAAEE; margin-top: 4px; font-weight: 600; letter-spacing: -0.3px;">
+            텔레그램 알림받기
+        </div>
+    </a>
 </div>
 """,
     unsafe_allow_html=True,
