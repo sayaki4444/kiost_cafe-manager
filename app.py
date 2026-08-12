@@ -169,7 +169,7 @@ custom_css = """
 st.markdown(custom_css, unsafe_allow_html=True)
 
 # -------------------------------------------------------------------
-# 3. 텔레그램 알림 전송 함수
+# 3. 텔레그램 알람 전송 함수
 # -------------------------------------------------------------------
 
 
@@ -187,7 +187,7 @@ def send_telegram_alert(message):
         response = requests.post(url, json=payload, timeout=5)
 
         if response.status_code == 200:
-            st.toast("📢 텔레그램 채널로 알림이 전송되었습니다!")
+            st.toast("📢 텔레그램 채널로 알람이 전송되었습니다!")
         else:
             st.warning(f"텔레그램 전송 실패: {response.text}")
     except Exception as e:
@@ -399,7 +399,7 @@ st.markdown(
             ✈️
         </div>
         <div style="font-size: 11px; color: #2AAAEE; margin-top: 4px; font-weight: 600; letter-spacing: -0.3px;">
-            텔레그램 알림받기
+            텔레그램 알람받기
         </div>
     </a>
 </div>
@@ -543,7 +543,7 @@ with tab3:
             st.warning(f"방명록 처리 오류: {e}")
 
 # -------------------------------------------------------------------
-# 8. 관리자 사이드바 (상태 변경 시 텔레그램 자동 알림 발송)
+# 8. 관리자 사이드바 (상태 변경 시 텔레그램 자동 알람 발송)
 # -------------------------------------------------------------------
 st.sidebar.title("🔐 관리자 메뉴")
 
@@ -578,17 +578,17 @@ else:
     st.sidebar.info(f"현재 반영된 상태: **{current_status_text}**")
     st.sidebar.divider()
 
-    st.sidebar.markdown("### 🛠️ 상태 변경 및 알림 발송")
+    st.sidebar.markdown("### 🛠️ 상태 변경 및 알람 발송")
 
     # 🟢 1단계 변경
     if st.sidebar.button("🟢 1단계: 이용가능", use_container_width=True):
         if sheet_stock:
             sheet_stock.update_cell(1, 2, 200)
             st.cache_data.clear()
-            # 💡 텔레그램 알림 전송
-            send_telegram_alert(
-                "☕ **[소담터 카페]**\n맛있는 커피가 넉넉하게 준비되었습니다. 커피 한 잔 하러 오세요! 🟢"
-            )
+            # 💡 텔레그램 알람 전송
+            # send_telegram_alert(
+            #     "☕ **[소담터 카페]**\n맛있는 커피가 넉넉하게 준비되었습니다. 커피 한 잔 하러 오세요! 🟢"
+            # )
             st.rerun()
 
     # 🟡 2단계 변경
@@ -596,10 +596,10 @@ else:
         if sheet_stock:
             sheet_stock.update_cell(1, 2, 15)
             st.cache_data.clear()
-            # 💡 텔레그램 알림 전송
-            send_telegram_alert(
-                "🏃‍♂️ **[소담터 카페]**\n오늘 준비된 커피가 얼마 남지 않았습니다! 조금만 서둘러 주세요! 🟡"
-            )
+            # 💡 텔레그램 알람 전송
+            # send_telegram_alert(
+            #     "🏃‍♂️ **[소담터 카페]**\n오늘 준비된 커피가 얼마 남지 않았습니다! 조금만 서둘러 주세요! 🟡"
+            # )
             st.rerun()
 
     # 🔴 3단계 변경
@@ -607,7 +607,7 @@ else:
         if sheet_stock:
             sheet_stock.update_cell(1, 2, 0)
             st.cache_data.clear()
-            # 💡 텔레그램 알림 전송
+            # 💡 텔레그램 알람 전송
             send_telegram_alert(
                 "🌙 **[소담터 카페]**\n오늘 준비된 재고가 모두 소진되어 영업을 마감합니다. 내일 만나요! 🔴"
             )
