@@ -254,17 +254,13 @@ else:
 
 # 👈 본인의 텔레그램 채널 공개 링크 주소로 변경하세요
 telegram_channel_url = "https://t.me/+n5J-xg8BI4tkYmE1"
-
 st.markdown(
     f"""
 <div class="top-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
-    <!-- 좌측 타이틀 영역 -->
     <div>
         <div class="header-title" style="font-size: 26px; font-weight: 700; color: #ffffff; margin: 0;">Good day ☕</div>
         <div class="header-sub" style="font-size: 13px; color: #8E8EA0; margin-top: 2px;">Sodam-teo Cafe</div>
     </div>
-    
-    <!-- 우측 텔레그램 버튼 및 하단 라벨 영역 -->
     <a href="{telegram_channel_url}" target="_blank" style="text-decoration: none; display: flex; flex-direction: column; align-items: center;">
         <div style="
             width: 42px; 
@@ -277,7 +273,6 @@ st.markdown(
             border: 1px solid rgba(42, 171, 238, 0.4); 
             font-size: 20px;
             box-shadow: 0 4px 12px rgba(42, 171, 238, 0.2);
-            transition: transform 0.2s ease;
         ">
             ✈️
         </div>
