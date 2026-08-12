@@ -13,17 +13,14 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# 2. PC 모바일 뷰 고정 + 기본 다크 테마 커스텀 CSS
+# 2. 커스텀 CSS
 custom_css = """
 <style>
-    /* 전체 배경 (어두운 그래디언트) */
     .stApp {
         background: linear-gradient(135deg, #090a0f 0%, #12131c 100%);
         color: #ffffff;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
-    
-    /* PC 접속 시 화면 중앙에 모바일 크기로 고정 */
     .main .block-container {
         max-width: 430px !important;
         padding-top: 1.5rem !important;
@@ -32,14 +29,10 @@ custom_css = """
         padding-right: 1rem !important;
         margin: 0 auto;
     }
-
-    /* Streamlit 기본 푸터 숨기기 */
     footer {
         visibility: hidden !important;
         height: 0px !important;
     }
-
-    /* 상단 프로필/시간 헤더 */
     .top-header {
         display: flex;
         justify-content: space-between;
@@ -56,8 +49,6 @@ custom_css = """
         font-size: 13px;
         color: #8E8EA0;
     }
-
-    /* 버튼 모던 스타일 재정의 */
     .stButton > button {
         background-color: #212232 !important;
         color: #e2e8f0 !important;
@@ -73,16 +64,12 @@ custom_css = """
         border-color: #c084fc !important;
         color: #ffffff !important;
     }
-
-    /* 입력 폼 다크 스타일화 */
     .stTextInput > div > div > input {
         background-color: #181926 !important;
         color: #ffffff !important;
         border-radius: 12px !important;
         border: 1px solid rgba(255, 255, 255, 0.1) !important;
     }
-
-    /* 탭(Tab) 디자인 커스텀 */
     .stTabs [data-baseweb="tab-list"] {
         gap: 8px;
         background-color: #13141f;
@@ -100,8 +87,6 @@ custom_css = """
         background-color: #3b2d54 !important;
         color: #ffffff !important;
     }
-
-    /* Metric 및 Alert 카드 스타일 다크 톤 맞춤 */
     [data-testid="stMetricValue"] {
         color: #c084fc !important;
     }
@@ -149,7 +134,7 @@ def init_gspread():
 
 gc = init_gspread()
 
-def get_current_stock(_gc):
+def get_current_stock_from_sheet(_gc):
     if not _gc:
         return None, None, 0
     try:
@@ -161,50 +146,48 @@ def get_current_stock(_gc):
         st.error(f"📄 구글 시트 읽기 실패: {e}")
         return None, None, 0
 
-doc, sheet, current_stock = get_current_stock(gc)
+doc, sheet, fetched_stock = get_current_stock_from_sheet(gc)
+
+# Session State를 이용해 즉시 반영 보장
+if "current_stock" not in st.session_state:
+    st.session_state.current_stock = fetched_stock
+
+current_stock = st.session_state.current_stock
 
 # -------------------------------------------------------------------
-# 4. 상태별 색상 및 문구 계산 (동적 테마 연동)
+# 4. 상태별 색상 및 문구 동적 계산 (재고 수량 기준)
 # -------------------------------------------------------------------
-if not is_weekday or not is_opening_hours:
-    # 영업시간 외
-    theme_bg = "radial-gradient(circle at 50% 30%, #3d1c1c 0%, #13141f 75%)"
-    theme_shadow = "0 10px 40px rgba(239, 68, 68, 0.25)"
-    theme_border = "rgba(239, 68, 68, 0.4)"
-    theme_subtext_color = "#f87171"
-    status_label = "🔴 카페마감"
-    badge_bg = "rgba(239, 68, 68, 0.15)"
-    badge_color = "#ef4444"
-elif current_stock > 30:
-    # 🟢 1단계: 여유 가득
+
+if current_stock > 30:
+    # 🟢 1단계: 이용가능
     theme_bg = "radial-gradient(circle at 50% 30%, #1c3d2a 0%, #13141f 75%)"
-    theme_shadow = "0 10px 40px rgba(34, 197, 94, 0.25)"
-    theme_border = "rgba(34, 197, 94, 0.4)"
+    theme_shadow = "0 10px 40px rgba(34, 197, 94, 0.3)"
+    theme_border = "rgba(34, 197, 94, 0.5)"
     theme_subtext_color = "#4ade80"
     status_label = "🟢 이용가능"
     badge_bg = "rgba(34, 197, 94, 0.15)"
     badge_color = "#22c55e"
 elif current_stock > 0:
-    # 🟡 2단계: 마감 임박
+    # 🟡 2단계: 소진임박
     theme_bg = "radial-gradient(circle at 50% 30%, #3d331c 0%, #13141f 75%)"
-    theme_shadow = "0 10px 40px rgba(234, 179, 8, 0.25)"
-    theme_border = "rgba(234, 179, 8, 0.4)"
+    theme_shadow = "0 10px 40px rgba(234, 179, 8, 0.3)"
+    theme_border = "rgba(234, 179, 8, 0.5)"
     theme_subtext_color = "#facc15"
     status_label = "🟡 소진임박"
     badge_bg = "rgba(234, 179, 8, 0.15)"
     badge_color = "#eab308"
 else:
-    # 🔴 3단계: 금일 마감
+    # 🔴 3단계: 카페마감
     theme_bg = "radial-gradient(circle at 50% 30%, #3d1c1c 0%, #13141f 75%)"
-    theme_shadow = "0 10px 40px rgba(239, 68, 68, 0.25)"
-    theme_border = "rgba(239, 68, 68, 0.4)"
+    theme_shadow = "0 10px 40px rgba(239, 68, 68, 0.3)"
+    theme_border = "rgba(239, 68, 68, 0.5)"
     theme_subtext_color = "#f87171"
     status_label = "🔴 카페마감"
     badge_bg = "rgba(239, 68, 68, 0.15)"
     badge_color = "#ef4444"
 
 # -------------------------------------------------------------------
-# 5. 상단 UI 헤더 및 동적 원형 카드
+# 5. 상단 UI 헤더 및 메인 원형 카드
 # -------------------------------------------------------------------
 
 st.markdown("""
@@ -219,7 +202,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# 관리자가 변경하는 상태에 맞춰 색상과 문구가 동적으로 바뀌는 메인 원형 카드
+# 관리자 설정 상태에 따른 동적 원형 카드
 st.markdown(f"""
 <div style="
     background: {theme_bg};
@@ -233,7 +216,7 @@ st.markdown(f"""
     align-items: center;
     box-shadow: {theme_shadow}, inset 0 0 15px rgba(255, 255, 255, 0.05);
     border: 1px solid {theme_border};
-    transition: all 0.5s ease;
+    transition: all 0.4s ease;
 ">
     <div style="font-size: 13px; color: {theme_subtext_color}; margin-bottom: 4px; font-weight: 600;">☕ Cafe Status</div>
     <div style="font-size: 32px; font-weight: 800; color: #ffffff; letter-spacing: -1px; margin-bottom: 4px;">
@@ -245,7 +228,7 @@ st.markdown(f"""
         font-weight: 700;
         color: {badge_color};
         background: {badge_bg};
-        padding: 3px 12px;
+        padding: 4px 14px;
         border-radius: 12px;
         border: 1px solid {badge_color}40;
     ">
@@ -262,18 +245,17 @@ st.markdown("<br>", unsafe_allow_html=True)
 
 tab1, tab2, tab3 = st.tabs(["☕ 카페 현황", "🏆 인기 투표", "💬 끄적끄적 방명록"])
 
-# --- [탭 1] 카페 현황 및 날씨 ---
+# --- [탭 1] 카페 현황 ---
 with tab1:
     st.markdown("<br>", unsafe_allow_html=True)
     
+    if not is_weekday or not is_opening_hours:
+        st.info("💡 현재는 **운영 시간(평일 10:00 ~ 16:00) 외** 시간입니다.")
+
     if current_stock > 30:
         st.success("### 🟢 여유 있어요!\n맛있는 커피가 넉넉하게 준비되어 있습니다. 천천히 오세요~ ☕")
     elif current_stock > 0:
         st.warning("### 🟡 마감 임박!\n오늘 준비된 커피가 얼마 남지 않았어요. 조금만 서둘러 주세요! 🏃‍♂️")
-    elif current_stock == 0 and (is_weekday and is_opening_hours):
-        st.error("### 🔴 금일 마감\n오늘 준비된 커피가 모두 소진되었습니다. 내일 더 맛있는 커피로 만나요! 🌙")
-    elif not is_weekday or not is_opening_hours:
-        st.error("### 🌙 운영 시간 외\n사내 카페 운영 시간은 **평일 10:00 ~ 16:00** 입니다.\n내일 영업 시간에 만나요! ☕")
     else:
         st.error("### 🔴 금일 마감\n오늘 준비된 커피가 모두 소진되었습니다. 내일 더 맛있는 커피로 만나요! 🌙")
         
@@ -388,19 +370,22 @@ else:
     st.sidebar.markdown("### 🛠️ 상태 변경하기")
     
     if st.sidebar.button("🟢 1단계: 이용가능 (200)", use_container_width=True):
+        st.session_state.current_stock = 200
         if sheet:
-            sheet.update_acell('B1', 200)
-            st.rerun()
+            sheet.update_cell(1, 2, 200)
+        st.rerun()
         
     if st.sidebar.button("🟡 2단계: 소진임박 (15)", use_container_width=True):
+        st.session_state.current_stock = 15
         if sheet:
-            sheet.update_acell('B1', 15)
-            st.rerun()
+            sheet.update_cell(1, 2, 15)
+        st.rerun()
         
     if st.sidebar.button("🔴 3단계: 카페마감 (0)", use_container_width=True):
+        st.session_state.current_stock = 0
         if sheet:
-            sheet.update_acell('B1', 0)
-            st.rerun()
+            sheet.update_cell(1, 2, 0)
+        st.rerun()
 
     st.sidebar.divider()
     if st.sidebar.button("🔒 로그아웃", use_container_width=True):
