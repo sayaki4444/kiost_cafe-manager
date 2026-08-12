@@ -332,6 +332,9 @@ else:
     steam_opacity = 0
 
 # 커피 채움 도형과 증기(steam) SVG 조각을 미리 조립
+# 주의: 여기서 만드는 조각들은 반드시 개행(\n)이 없는 한 줄 문자열이어야 한다.
+# st.markdown()에 삽입될 때 공백만 있는 줄이 생기면, 마크다운 파서가 그 지점부터
+# 이후 내용을 HTML이 아닌 "들여쓰기 코드블록"으로 오인해서 태그가 그대로 노출된다.
 _coffee_height = 140 - cup_fill_y
 coffee_fill_svg = (
     f'<rect x="20" y="{cup_fill_y}" width="120" height="{_coffee_height}" '
@@ -341,16 +344,31 @@ coffee_fill_svg = (
 )
 
 if steam_visible:
-    steam_svg = f"""
-        <path class="steam" style="opacity:{steam_opacity};" d="M55,35 C48,25 62,15 55,5"
-              stroke="var(--accent-light)" stroke-width="4" stroke-linecap="round" fill="none" />
-        <path class="steam" style="opacity:{steam_opacity};" d="M80,35 C73,25 87,15 80,3"
-              stroke="var(--accent-light)" stroke-width="4" stroke-linecap="round" fill="none" />
-        <path class="steam" style="opacity:{steam_opacity};" d="M105,35 C98,25 112,15 105,5"
-              stroke="var(--accent-light)" stroke-width="4" stroke-linecap="round" fill="none" />
-    """
+    _steam_path = (
+        'stroke="var(--accent-light)" stroke-width="4" stroke-linecap="round" fill="none" />'
+    )
+    steam_svg = (
+        f'<path class="steam" style="opacity:{steam_opacity};" d="M55,35 C48,25 62,15 55,5" {_steam_path}'
+        f'<path class="steam" style="opacity:{steam_opacity};" d="M80,35 C73,25 87,15 80,3" {_steam_path}'
+        f'<path class="steam" style="opacity:{steam_opacity};" d="M105,35 C98,25 112,15 105,5" {_steam_path}'
+    )
 else:
     steam_svg = ""
+
+# 잔+손잡이 외곽선과 위 조각들을 하나의 한 줄짜리 SVG 마크업으로 합친다.
+mug_svg = (
+    '<svg class="cup-illustration" viewBox="0 0 160 170" xmlns="http://www.w3.org/2000/svg">'
+    '<defs><clipPath id="mugClip">'
+    '<path d="M25,40 L135,40 L127,132 Q127,140 119,140 L41,140 Q33,140 33,132 Z" />'
+    '</clipPath></defs>'
+    + steam_svg
+    + coffee_fill_svg
+    + '<path d="M25,40 L135,40 L127,132 Q127,140 119,140 L41,140 Q33,140 33,132 Z" '
+    'fill="none" stroke="#e8dcc8" stroke-width="4" stroke-linejoin="round" />'
+    '<path d="M135,55 C165,55 165,105 135,105" '
+    'fill="none" stroke="#e8dcc8" stroke-width="6" stroke-linecap="round" />'
+    '</svg>'
+)
 
 # -------------------------------------------------------------------
 # 6. 상단 UI 및 커피잔 시그니처 카드 (텔레그램 링크 버튼 반영)
@@ -390,28 +408,14 @@ st.markdown(
 )
 
 st.markdown(
-    f"""
-<div class="cup-card" style="background: {theme_card_bg}; box-shadow: {theme_shadow}; border: 1px solid {theme_border};">
-    <svg class="cup-illustration" viewBox="0 0 160 170" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-            <clipPath id="mugClip">
-                <path d="M25,40 L135,40 L127,132 Q127,140 119,140 L41,140 Q33,140 33,132 Z" />
-            </clipPath>
-        </defs>
-        {steam_svg}
-        {coffee_fill_svg}
-        <path d="M25,40 L135,40 L127,132 Q127,140 119,140 L41,140 Q33,140 33,132 Z"
-              fill="none" stroke="#e8dcc8" stroke-width="4" stroke-linejoin="round" />
-        <path d="M135,55 C165,55 165,105 135,105"
-              fill="none" stroke="#e8dcc8" stroke-width="6" stroke-linecap="round" />
-    </svg>
-    <div class="cup-title">소담터</div>
-    <div class="cup-hours">운영시간 10:00 - 16:00</div>
-    <div class="cup-badge" style="color: {badge_color}; background: {badge_bg}; border-color: {badge_color}40;">
-        {status_label}
-    </div>
-</div>
-""",
+    f'<div class="cup-card" style="background: {theme_card_bg}; box-shadow: {theme_shadow}; '
+    f'border: 1px solid {theme_border};">'
+    f'{mug_svg}'
+    f'<div class="cup-title">소담터</div>'
+    f'<div class="cup-hours">운영시간 10:00 - 16:00</div>'
+    f'<div class="cup-badge" style="color: {badge_color}; background: {badge_bg}; '
+    f'border-color: {badge_color}40;">{status_label}</div>'
+    f'</div>',
     unsafe_allow_html=True,
 )
 
