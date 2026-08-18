@@ -1,7 +1,6 @@
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 import json
 import gspread
-import pytz
 import requests
 import streamlit as st
 
@@ -169,15 +168,24 @@ custom_css = """
 st.markdown(custom_css, unsafe_allow_html=True)
 
 # -------------------------------------------------------------------
+# 안전한 형변환 헬퍼 함수
+# -------------------------------------------------------------------
+def safe_int(val, default=0):
+    try:
+        if val is None:
+            return default
+        return int(float(str(val).strip()))
+    except (ValueError, TypeError):
+        return default
+
+# -------------------------------------------------------------------
 # 3. 텔레그램 알람 전송 함수
 # -------------------------------------------------------------------
-
-
 def send_telegram_alert(message):
     try:
         if "telegram" in st.secrets:
-            bot_token = st.secrets["telegram"]["bot_token"]
-            chat_id = st.secrets["telegram"]["chat_id"]
+            bot_token = st.secrets["telegram"].get("bot_token", "여기에_봇토큰_입력")
+            chat_id = st.secrets["telegram"].get("chat_id", "여기에_채널아이디_입력")
         else:
             bot_token = "여기에_봇토큰_입력"
             chat_id = "여기에_채널아이디_입력"
@@ -197,8 +205,9 @@ def send_telegram_alert(message):
 # -------------------------------------------------------------------
 # 4. 데이터 및 구글 시트 연동 (Caching)
 # -------------------------------------------------------------------
-
-now_kst = datetime.now(pytz.timezone("Asia/Seoul"))
+# 표준 라이브러리를 사용하여 KST 시간 구하기 (pytz 종속성 제거로 오류 방지)
+KST = timezone(timedelta(hours=9))
+now_kst = datetime.now(KST)
 current_hour = now_kst.hour
 current_weekday = now_kst.weekday()
 
@@ -252,47 +261,45 @@ def get_sheets(_gc):
 doc, sheet_stock, sheet_vote, sheet_guest = get_sheets(gc)
 
 
+# 캐싱 함수 내부에서 st.session_state를 직접 수정하는 오동작 방지 및 외부 예외 안전 처리 적용
 @st.cache_data(ttl=10)
 def fetch_stock_data():
-    if sheet_stock:
-        try:
-            value = int(sheet_stock.acell("B1").value)
-            st.session_state.pop("stock_fetch_error", None)
-            return value
-        except Exception as e:
-            st.session_state["stock_fetch_error"] = str(e)
-            return 0
-    st.session_state["stock_fetch_error"] = "구글 시트에 연결되지 않았습니다."
-    return 0
+    if not sheet_stock:
+        raise ConnectionError("구글 시트에 연결되지 않았습니다.")
+    try:
+        return sheet_stock.acell("B1").value
+    except Exception as e:
+        raise RuntimeError(f"재고 셀(B1) 파싱 실패: {e}")
 
 
 @st.cache_data(ttl=10)
 def fetch_vote_data():
-    if sheet_vote:
-        try:
-            data = sheet_vote.get_all_values()
-            st.session_state.pop("vote_fetch_error", None)
-            return data
-        except Exception as e:
-            st.session_state["vote_fetch_error"] = str(e)
-            return []
-    return []
+    if not sheet_vote:
+        raise ConnectionError("구글 시트에 연결되지 않았습니다.")
+    try:
+        return sheet_vote.get_all_values()
+    except Exception as e:
+        raise RuntimeError(f"투표 데이터 로드 실패: {e}")
 
 
 @st.cache_data(ttl=10)
 def fetch_guest_data():
-    if sheet_guest:
-        try:
-            data = sheet_guest.get_all_values()
-            st.session_state.pop("guest_fetch_error", None)
-            return data
-        except Exception as e:
-            st.session_state["guest_fetch_error"] = str(e)
-            return []
-    return []
+    if not sheet_guest:
+        raise ConnectionError("구글 시트에 연결되지 않았습니다.")
+    try:
+        return sheet_guest.get_all_values()
+    except Exception as e:
+        raise RuntimeError(f"방명록 데이터 로드 실패: {e}")
 
 
-current_stock = fetch_stock_data()
+# 메인 흐름에서 캐싱 함수의 결과를 안전하게 처리
+stock_fetch_error = None
+try:
+    raw_stock = fetch_stock_data()
+    current_stock = safe_int(raw_stock, 0)
+except Exception as e:
+    current_stock = 0
+    stock_fetch_error = str(e)
 
 # -------------------------------------------------------------------
 # 5. 상태별 테마 계산
@@ -429,10 +436,10 @@ tab1, tab2, tab3 = st.tabs(["☕ 카페 현황", "🏆 인기 투표", "💬 끄
 
 with tab1:
     st.markdown("<br>", unsafe_allow_html=True)
-    if st.session_state.get("stock_fetch_error"):
+    if stock_fetch_error:
         st.warning(
             f"⚠️ 재고 데이터를 불러오지 못해 임시로 마감 상태로 표시 중입니다. "
-            f"(오류: {st.session_state['stock_fetch_error']})"
+            f"(오류: {stock_fetch_error})"
         )
     if not is_weekday or not is_opening_hours:
         st.info("💡 현재는 **운영 시간(평일 10:00 ~ 16:00) 외** 시간입니다.")
@@ -465,20 +472,31 @@ with tab1:
 with tab2:
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("### 🏆 가장 사랑받는 메뉴 TOP 3")
-    vote_raw_data = fetch_vote_data()
-    if st.session_state.get("vote_fetch_error"):
+    
+    vote_fetch_error = None
+    vote_raw_data = []
+    try:
+        vote_raw_data = fetch_vote_data()
+    except Exception as e:
+        vote_fetch_error = str(e)
+        
+    if vote_fetch_error:
         st.warning(
-            f"⚠️ 투표 데이터를 불러오지 못했습니다. (오류: {st.session_state['vote_fetch_error']})"
+            f"⚠️ 투표 데이터를 불러오지 못했습니다. (오류: {vote_fetch_error})"
         )
+        
     if len(vote_raw_data) > 1:
         try:
             # 정렬 전에 시트의 실제 행 번호(2행부터 시작)를 각 항목에 붙여둔다.
-            # 이렇게 해야 이후 정렬로 순서가 바뀌어도 올바른 행을 업데이트할 수 있다.
-            vote_data = [
-                (row[0], row[1], sheet_row_num)
-                for sheet_row_num, row in enumerate(vote_raw_data[1:], start=2)
-            ]
-            vote_data.sort(key=lambda x: int(x[1]), reverse=True)
+            # 데이터 구조 불일치 대비 안전한 unpacking과 데이터 정제 과정 추가
+            vote_data = []
+            for sheet_row_num, row in enumerate(vote_raw_data[1:], start=2):
+                if len(row) >= 2:
+                    vote_data.append((row[0], safe_int(row[1], 0), sheet_row_num))
+                elif len(row) == 1:
+                    vote_data.append((row[0], 0, sheet_row_num))
+                    
+            vote_data.sort(key=lambda x: x[1], reverse=True)
             top3 = vote_data[:3]
             col1, col2, col3 = st.columns(3)
             if len(top3) >= 1:
@@ -498,8 +516,7 @@ with tab2:
             with st.expander("👉 나도 최애 메뉴에 투표하기"):
                 st.caption("메뉴를 누르면 즉시 1표가 올라갑니다!")
                 vote_cols = st.columns(4)
-                for i, (menu_name, votes_str, sheet_row_num) in enumerate(vote_data):
-                    current_votes = int(votes_str)
+                for i, (menu_name, current_votes, sheet_row_num) in enumerate(vote_data):
                     if vote_cols[i % 4].button(menu_name, key=f"vote_{i}"):
                         if sheet_vote:
                             sheet_vote.update_cell(sheet_row_num, 2, current_votes + 1)
@@ -512,10 +529,19 @@ with tab2:
 with tab3:
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("### 💬 끄적끄적 한줄 게시판")
-    if st.session_state.get("guest_fetch_error"):
+    
+    guest_fetch_error = None
+    guest_raw_data = []
+    try:
+        guest_raw_data = fetch_guest_data()
+    except Exception as e:
+        guest_fetch_error = str(e)
+        
+    if guest_fetch_error:
         st.warning(
-            f"⚠️ 방명록 데이터를 불러오지 못했습니다. (오류: {st.session_state['guest_fetch_error']})"
+            f"⚠️ 방명록 데이터를 불러오지 못했습니다. (오류: {guest_fetch_error})"
         )
+        
     if sheet_guest:
         try:
             with st.form("guestbook_form", clear_on_submit=True):
@@ -525,7 +551,7 @@ with tab3:
                 )
                 submitted = st.form_submit_button("등록하기")
                 if submitted and new_comment:
-                    kst = datetime.now(pytz.timezone("Asia/Seoul")).strftime(
+                    kst = datetime.now(KST).strftime(
                         "%m-%d %H:%M"
                     )
                     sheet_guest.append_row([kst, new_comment])
@@ -533,12 +559,14 @@ with tab3:
                     st.success("소중한 의견이 등록되었습니다!")
                     st.rerun()
 
-            guest_data = fetch_guest_data()
-            if len(guest_data) > 1:
-                data_rows = guest_data[1:]
+            if len(guest_raw_data) > 1:
+                data_rows = guest_raw_data[1:]
                 st.markdown("##### 💌 최근 남겨진 이야기")
                 for row in reversed(data_rows[-5:]):
-                    st.info(f"**{row[0]}** | {row[1]}")
+                    if len(row) >= 2:
+                        st.info(f"**{row[0]}** | {row[1]}")
+                    elif len(row) == 1:
+                        st.info(f"{row[0]}")
         except Exception as e:
             st.warning(f"방명록 처리 오류: {e}")
 
@@ -555,7 +583,8 @@ if not st.session_state.is_admin_logged_in:
         "비밀번호를 입력하세요", type="password", key="admin_pw_input"
     )
     if st.sidebar.button("🔓 로그인", use_container_width=True, key="login_btn"):
-        correct_pw = st.secrets.get("admin", {}).get("password")
+        admin_secrets = st.secrets.get("admin")
+        correct_pw = admin_secrets.get("password") if admin_secrets else None
         if not correct_pw:
             st.sidebar.error("⚠️ secrets.toml에 관리자 비밀번호가 설정되지 않았습니다.")
         elif admin_pw == correct_pw:
