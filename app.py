@@ -5,7 +5,7 @@ import requests
 import streamlit as st
 
 # -------------------------------------------------------------------
-# 1. 페이지 기본 설정
+# 1. 페이지 기본 설정 및 세션 상태 초기화
 # -------------------------------------------------------------------
 st.set_page_config(
     page_title="소담터 - 사내 카페",
@@ -14,155 +14,237 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
+# 세션 상태에 테마 초기값 설정
+if "app_theme" not in st.session_state:
+    st.session_state["app_theme"] = "☕ 오리지널 커피 다크"
+
 # -------------------------------------------------------------------
-# 2. 커스텀 CSS (PC 모바일 뷰 고정 + 모던 다크 테마)
+# 2. 실시간 디자인 테마 구성 (4가지 프리셋)
 # -------------------------------------------------------------------
-custom_css = """
+themes_config = {
+    "☕ 오리지널 커피 다크": {
+        "bg-base": "#120d0a",
+        "bg-gradient-end": "#1a120d",
+        "bg-elevated": "#1c140f",
+        "bg-card": "#1f1712",
+        "accent": "#c17a3d",
+        "accent-light": "#e0a458",
+        "text-primary": "#f5ece0",
+        "text-secondary": "#b3a08c",
+        "border-soft": "rgba(245, 236, 224, 0.08)",
+        "card-radius": "28px",
+        "button-radius": "14px",
+        "shadow": "0 10px 34px rgba(193, 122, 61, 0.12)",
+        "mug-stroke": "#e8dcc8",
+        "glow-effect": "none",
+    },
+    "🌿 성수동 세이지 그린": {
+        "bg-base": "#F4F6F4",
+        "bg-gradient-end": "#EAEEEC",
+        "bg-elevated": "#EAECEB",
+        "bg-card": "#FFFFFF",
+        "accent": "#4E8A6C",
+        "accent-light": "#2D5A43",
+        "text-primary": "#1C2E24",
+        "text-secondary": "#6B7F74",
+        "border-soft": "rgba(78, 138, 108, 0.15)",
+        "card-radius": "16px",
+        "button-radius": "8px",
+        "shadow": "0 8px 24px rgba(78, 138, 108, 0.06)",
+        "mug-stroke": "#2D5A43",
+        "glow-effect": "none",
+    },
+    "☀️ 포근한 카라멜 우드": {
+        "bg-base": "#FAF6F0",
+        "bg-gradient-end": "#F5EDE4",
+        "bg-elevated": "#F3EBE1",
+        "bg-card": "#FFFFFF",
+        "accent": "#D4A373",
+        "accent-light": "#6C584C",
+        "text-primary": "#3D342E",
+        "text-secondary": "#8C7D73",
+        "border-soft": "rgba(212, 163, 115, 0.18)",
+        "card-radius": "24px",
+        "button-radius": "18px",
+        "shadow": "0 10px 30px rgba(212, 163, 115, 0.08)",
+        "mug-stroke": "#6C584C",
+        "glow-effect": "none",
+    },
+    "🎆 을지로 힙스토 네온": {
+        "bg-base": "#0D0E15",
+        "bg-gradient-end": "#05060A",
+        "bg-elevated": "#161722",
+        "bg-card": "#1A1B2A",
+        "accent": "#FF7A00",
+        "accent-light": "#00F0FF",
+        "text-primary": "#FFFFFF",
+        "text-secondary": "#8C8EAD",
+        "border-soft": "rgba(0, 240, 255, 0.15)",
+        "card-radius": "20px",
+        "button-radius": "12px",
+        "shadow": "0 10px 30px rgba(0, 240, 255, 0.15)",
+        "mug-stroke": "#00F0FF",
+        "glow-effect": "0 0 25px rgba(0, 240, 255, 0.25)",
+    },
+}
+
+# 현재 세션에 설정된 테마 가져오기
+selected_theme = st.session_state["app_theme"]
+t = themes_config[selected_theme]
+
+# 테마에 최적화된 동적 커스텀 CSS 정의
+custom_css = f"""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap');
 
-    :root {
-        --bg-base: #120d0a;
-        --bg-elevated: #1c140f;
-        --bg-card: #1f1712;
-        --accent: #c17a3d;
-        --accent-light: #e0a458;
-        --text-primary: #f5ece0;
-        --text-secondary: #b3a08c;
-        --border-soft: rgba(245, 236, 224, 0.08);
-    }
+    :root {{
+        --bg-base: {t['bg-base']};
+        --bg-elevated: {t['bg-elevated']};
+        --bg-card: {t['bg-card']};
+        --accent: {t['accent']};
+        --accent-light: {t['accent-light']};
+        --text-primary: {t['text-primary']};
+        --text-secondary: {t['text-secondary']};
+        --border-soft: {t['border-soft']};
+        --card-radius: {t['card-radius']};
+        --button-radius: {t['button-radius']};
+        --mug-stroke: {t['mug-stroke']};
+    }}
 
-    .stApp {
-        background: linear-gradient(160deg, var(--bg-base) 0%, #1a120d 100%);
+    .stApp {{
+        background: linear-gradient(160deg, var(--bg-base) 0%, {t['bg-gradient-end']} 100%);
         color: var(--text-primary);
         font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    }
-    .main .block-container {
+    }}
+    .main .block-container {{
         max-width: 430px !important;
         padding-top: 1.5rem !important;
         padding-bottom: 3rem !important;
         padding-left: 1rem !important;
         padding-right: 1rem !important;
         margin: 0 auto;
-    }
-    footer {
+    }}
+    footer {{
         visibility: hidden !important;
         height: 0px !important;
-    }
-    .top-header {
+    }}
+    .top-header {{
         display: flex;
         justify-content: space-between;
         align-items: center;
         margin-bottom: 20px;
-    }
-    .header-title {
+    }}
+    .header-title {{
         font-family: 'Gaegu', cursive;
         font-size: 28px;
         font-weight: 700;
         color: var(--text-primary);
         margin: 0;
-    }
-    .header-sub {
+    }}
+    .header-sub {{
         font-size: 13px;
         color: var(--text-secondary);
-    }
-    .stButton > button {
+    }}
+    .stButton > button {{
         background-color: var(--bg-card) !important;
         color: var(--text-primary) !important;
-        border-radius: 14px !important;
+        border-radius: var(--button-radius) !important;
         border: 1px solid var(--border-soft) !important;
         padding: 8px 16px !important;
         width: 100%;
         font-weight: 600;
         transition: all 0.2s ease;
-    }
-    .stButton > button:hover {
+    }}
+    .stButton > button:hover {{
         background-color: var(--accent) !important;
         border-color: var(--accent-light) !important;
-        color: #1a120d !important;
-    }
-    .stTextInput > div > div > input {
+        color: {("#1a120d" if "다크" in selected_theme or "네온" in selected_theme else "#ffffff")} !important;
+    }}
+    .stTextInput > div > div > input {{
         background-color: var(--bg-elevated) !important;
         color: var(--text-primary) !important;
         border-radius: 12px !important;
         border: 1px solid var(--border-soft) !important;
-    }
-    .stTabs [data-baseweb="tab-list"] {
+    }}
+    .stTabs [data-baseweb="tab-list"] {{
         gap: 8px;
         background-color: var(--bg-elevated);
         padding: 6px;
         border-radius: 16px;
-    }
-    .stTabs [data-baseweb="tab"] {
+    }}
+    .stTabs [data-baseweb="tab"] {{
         height: 40px;
         border-radius: 12px;
         color: var(--text-secondary);
         font-weight: 600;
         border: none !important;
-    }
-    .stTabs [aria-selected="true"] {
+    }}
+    .stTabs [aria-selected="true"] {{
         background-color: var(--accent) !important;
-        color: #1a120d !important;
-    }
-    [data-testid="stMetricValue"] {
-        color: var(--accent-light) !important;
-    }
-    .stAlert {
+        color: {("#1a120d" if "다크" in selected_theme or "네온" in selected_theme else "#ffffff")} !important;
+    }}
+    [data-testid="stMetricValue"] {{
+        color: var(--accent) !important;
+    }}
+    .stAlert {{
         border-radius: 16px !important;
         background-color: var(--bg-card) !important;
         border: 1px solid var(--border-soft) !important;
-    }
+    }}
 
     /* 커피잔 + 증기 시그니처 일러스트 */
-    .cup-card {
-        border-radius: 28px;
+    .cup-card {{
+        border-radius: var(--card-radius);
         padding: 26px 20px 20px;
         margin: 20px auto;
         max-width: 300px;
         text-align: center;
         transition: all 0.4s ease;
-    }
-    .cup-illustration {
+        background: {t['bg-card']};
+        box-shadow: {t['shadow']};
+    }}
+    .cup-illustration {{
         width: 130px;
         height: auto;
         display: block;
         margin: 0 auto;
-    }
-    .steam {
+        filter: drop-shadow({t['glow-effect'] if t['glow-effect'] != 'none' else '0px 0px 0px transparent'});
+    }}
+    .steam {{
         transform-origin: center bottom;
         animation: steamRise 3s ease-in-out infinite;
-    }
-    .steam:nth-child(2) { animation-delay: 0.4s; }
-    .steam:nth-child(3) { animation-delay: 0.8s; }
-    @keyframes steamRise {
-        0%   { transform: translateY(0) scaleY(1); }
-        50%  { transform: translateY(-6px) scaleY(1.08); }
-        100% { transform: translateY(0) scaleY(1); }
-    }
-    @media (prefers-reduced-motion: reduce) {
-        .steam { animation: none; }
-    }
-    .cup-title {
+    }}
+    .steam:nth-child(2) {{ animation-delay: 0.4s; }}
+    .steam:nth-child(3) {{ animation-delay: 0.8s; }}
+    @keyframes steamRise {{
+        0%   {{ transform: translateY(0) scaleY(1); }}
+        50%  {{ transform: translateY(-6px) scaleY(1.08); }}
+        100% {{ transform: translateY(0) scaleY(1); }}
+    }}
+    @media (prefers-reduced-motion: reduce) {{
+        .steam {{ animation: none; }}
+    }}
+    .cup-title {{
         font-family: 'Gaegu', cursive;
         font-size: 32px;
         font-weight: 700;
         color: var(--text-primary);
         letter-spacing: -0.5px;
         margin-top: 4px;
-    }
-    .cup-hours {
+    }}
+    .cup-hours {{
         font-size: 12px;
         color: var(--text-secondary);
         margin-bottom: 10px;
-    }
-    .cup-badge {
+    }}
+    .cup-badge {{
         display: inline-block;
         font-size: 13px;
         font-weight: 700;
         padding: 4px 14px;
         border-radius: 12px;
         border: 1px solid;
-    }
+    }}
 </style>
 """
 st.markdown(custom_css, unsafe_allow_html=True)
@@ -262,7 +344,7 @@ doc, sheet_stock, sheet_vote, sheet_guest = get_sheets(gc)
 
 
 # 캐싱 함수 내부에서 st.session_state를 직접 수정하는 오동작 방지 및 외부 예외 안전 처리 적용
-@st.cache_data(ttl=60)
+@st.cache_data(ttl=10)
 def fetch_stock_data():
     if not sheet_stock:
         raise ConnectionError("구글 시트에 연결되지 않았습니다.")
@@ -272,7 +354,7 @@ def fetch_stock_data():
         raise RuntimeError(f"재고 셀(B1) 파싱 실패: {e}")
 
 
-@st.cache_data(ttl=60)
+@st.cache_data(ttl=10)
 def fetch_vote_data():
     if not sheet_vote:
         raise ConnectionError("구글 시트에 연결되지 않았습니다.")
@@ -282,7 +364,7 @@ def fetch_vote_data():
         raise RuntimeError(f"투표 데이터 로드 실패: {e}")
 
 
-@st.cache_data(ttl=60)
+@st.cache_data(ttl=10)
 def fetch_guest_data():
     if not sheet_guest:
         raise ConnectionError("구글 시트에 연결되지 않았습니다.")
@@ -362,7 +444,7 @@ if steam_visible:
 else:
     steam_svg = ""
 
-# 잔+손잡이 외곽선과 위 조각들을 하나의 한 줄짜리 SVG 마크업으로 합친다.
+# 잔+손잡이 외곽선과 위 조각들을 하나의 한 줄짜리 SVG 마크업으로 합친다. (테마별 --mug-stroke CSS 변수 반영)
 mug_svg = (
     '<svg class="cup-illustration" viewBox="0 0 160 170" xmlns="http://www.w3.org/2000/svg">'
     '<defs><clipPath id="mugClip">'
@@ -371,9 +453,9 @@ mug_svg = (
     + steam_svg
     + coffee_fill_svg
     + '<path d="M25,40 L135,40 L127,132 Q127,140 119,140 L41,140 Q33,140 33,132 Z" '
-    'fill="none" stroke="#e8dcc8" stroke-width="4" stroke-linejoin="round" />'
+    'fill="none" stroke="var(--mug-stroke)" stroke-width="4" stroke-linejoin="round" />'
     '<path d="M135,55 C165,55 165,105 135,105" '
-    'fill="none" stroke="#e8dcc8" stroke-width="6" stroke-linecap="round" />'
+    'fill="none" stroke="var(--mug-stroke)" stroke-width="6" stroke-linecap="round" />'
     '</svg>'
 )
 
@@ -571,8 +653,23 @@ with tab3:
             st.warning(f"방명록 처리 오류: {e}")
 
 # -------------------------------------------------------------------
-# 8. 관리자 사이드바 (상태 변경 시 텔레그램 자동 알람 발송)
+# 8. 사이드바 메뉴 (테마 스위처 + 관리자 메뉴 통합)
 # -------------------------------------------------------------------
+st.sidebar.title("🎨 디자인 테마 선택")
+
+# 사이드바에서 실시간으로 분위기를 바꿀 수 있는 테마 선택 상자 제공
+st.sidebar.selectbox(
+    "원하는 분위기를 선택해보세요!",
+    [
+        "☕ 오리지널 커피 다크",
+        "🌿 성수동 세이지 그린",
+        "☀️ 포근한 카라멜 우드",
+        "🎆 을지로 힙스토 네온",
+    ],
+    key="app_theme"  # st.session_state["app_theme"] 와 자동 동기화됨
+)
+
+st.sidebar.divider()
 st.sidebar.title("🔐 관리자 메뉴")
 
 if "is_admin_logged_in" not in st.session_state:
