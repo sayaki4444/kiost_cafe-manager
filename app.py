@@ -262,7 +262,7 @@ doc, sheet_stock, sheet_vote, sheet_guest = get_sheets(gc)
 
 
 # 캐싱 함수 내부에서 st.session_state를 직접 수정하는 오동작 방지 및 외부 예외 안전 처리 적용
-@st.cache_data(ttl=10)
+@st.cache_data(ttl=60)
 def fetch_stock_data():
     if not sheet_stock:
         raise ConnectionError("구글 시트에 연결되지 않았습니다.")
@@ -272,7 +272,7 @@ def fetch_stock_data():
         raise RuntimeError(f"재고 셀(B1) 파싱 실패: {e}")
 
 
-@st.cache_data(ttl=10)
+@st.cache_data(ttl=60)
 def fetch_vote_data():
     if not sheet_vote:
         raise ConnectionError("구글 시트에 연결되지 않았습니다.")
@@ -282,7 +282,7 @@ def fetch_vote_data():
         raise RuntimeError(f"투표 데이터 로드 실패: {e}")
 
 
-@st.cache_data(ttl=10)
+@st.cache_data(ttl=60)
 def fetch_guest_data():
     if not sheet_guest:
         raise ConnectionError("구글 시트에 연결되지 않았습니다.")
