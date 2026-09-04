@@ -137,99 +137,100 @@ def safe_int(val, default=0):
         return default
 
 # -------------------------------------------------------------------
-# 3. 구글 시트 연동 ('식단' 탭 자동 생성 및 읽기)
+# 3번: 구내식당 식판 모달 (실제 KIOST 식단 시트 구조 완벽 대응)
 # -------------------------------------------------------------------
-KST = timezone(timedelta(hours=9))
-now_kst = datetime.now(KST)
+@st.dialog("🍱 오늘 구내식당 점심 메뉴")
+def show_cafeteria_modal():
+    weekdays_kr = ["월", "화", "수", "목", "금", "토", "일"]
+    today_weekday_idx = now_kst.weekday()
+    today_weekday_str = weekdays_kr[today_weekday_idx]
+    
+    # 2026/09/04 및 2026-09-04 포맷 둘 다 대응
+    today_date_slash = now_kst.strftime("%Y/%m/%d")
+    today_display_str = now_kst.strftime("%m월 %d일")
 
-SCOPES = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
+    st.caption(f"📅 {today_display_str} ({today_weekday_str}요일) 중식 11:30 ~ 13:00")
 
-@st.cache_resource
-def get_gspread_client():
-    try:
-        if "gcp_service_account" in st.secrets:
-            secret_data = st.secrets["gcp_service_account"]
-            creds_dict = json.loads(secret_data) if isinstance(secret_data, str) else dict(secret_data)
-            return gspread.service_account_from_dict(creds_dict, scopes=SCOPES)
-        return gspread.service_account(filename="service_account.json", scopes=SCOPES)
-    except Exception:
-        return None
+    diet_list = fetch_diet_data()
 
-gc = get_gspread_client()
+    if today_weekday_idx >= 5:
+        st.info("🌿 주말에는 구내식당을 운영하지 않습니다. 편안한 주말 보내세요!")
+        return
 
-@st.cache_resource
-def get_sheets(_gc):
-    if not _gc:
-        return None, None, None
-    try:
-        doc = _gc.open("kiost_sodam")
-        sheet_stock = doc.worksheet("재고")
+    # 오늘 날짜 또는 오늘 요일과 일치하는 행 필터링
+    today_menus = []
+    if diet_list:
+        for row in diet_list:
+            row_date = str(row.get("날짜", "")).strip().replace("-", "/")
+            row_day = str(row.get("요일", "")).strip()
+            
+            # 날짜가 오늘과 같거나, 날짜 정보가 비어있을 경우 요일 매칭
+            if row_date == today_date_slash or (not row_date and row_day == today_weekday_str):
+                today_menus.append(row)
+        
+        # 만약 날짜 매칭이 안 되었을 경우(테스트 등), 요일만으로 fallback 검색
+        if not today_menus:
+            for row in diet_list:
+                if str(row.get("요일", "")).strip() == today_weekday_str:
+                    today_menus.append(row)
 
-        try:
-            sheet_diet = doc.worksheet("식단")
-        except gspread.WorksheetNotFound:
-            sheet_diet = doc.add_worksheet(title="식단", rows=20, cols=6)
-            default_headers = ["요일", "메인메뉴", "밥/국", "반찬1", "반찬2", "김치/기타"]
-            sample_diet = [
-                default_headers,
-                ["월", "제육볶음", "흑미밥 / 콩나물국", "계란찜", "청경채나물", "깍두기"],
-                ["화", "닭볶음탕", "기장밥 / 된장찌개", "해물파전", "도토리묵", "배추김치"],
-                ["수", "등심돈까스", "쌀밥 / 크림스프", "마카로니샐러드", "모닝빵/딸기잼", "피클/깍두기"],
-                ["목", "소불고기", "현미밥 / 소고기뭇국", "잡채", "시금치무침", "열무김치"],
-                ["금", "돼지갈비찜", "흑미밥 / 미역국", "동그랑땡", "콩자반", "겉절이"]
-            ]
-            sheet_diet.update("A1:F6", sample_diet)
+    if not today_menus:
+        st.warning("⚠️ 오늘 등록된 식단 정보가 없습니다.")
+    else:
+        # 한식/일품 등 복수 코너가 있으면 탭으로 제공, 1개면 바로 노출
+        corner_names = [f"📍 {m.get('메뉴구분', '중식')}" for m in today_menus]
+        
+        if len(today_menus) > 1:
+            tabs = st.tabs(corner_names)
+        else:
+            tabs = [st.container()]
 
-        return doc, sheet_stock, sheet_diet
-    except Exception:
-        return None, None, None
+        for idx, current_tab in enumerate(tabs):
+            with current_tab:
+                menu_info = today_menus[idx]
+                corner_title = menu_info.get("메뉴구분", "기본식")
+                raw_menu_str = str(menu_info.get("메뉴", ""))
+                dessert = str(menu_info.get("후식", "")).strip()
 
-doc, sheet_stock, sheet_diet = get_sheets(gc)
+                # 쉼표(,)로 나열된 메뉴 쪼개기
+                dishes = [d.strip() for d in raw_menu_str.split(",") if d.strip()]
+                
+                main_dish = dishes[0] if dishes else "메뉴 준비중"
+                sub_dishes = dishes[1:] if len(dishes) > 1 else []
 
-@st.cache_data(ttl=10)
-def fetch_stock_data():
-    if not sheet_stock:
-        return 0
-    return sheet_stock.acell("B1").value
+                # 식판 UI 렌더링
+                grid_html = f"""
+                <div style="background:#FFFFFF; border:1.5px solid rgba(0,56,118,0.12); border-radius:18px; padding:16px; margin-top:8px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                        <span style="font-weight:800; font-size:15px; color:#003876;">KIOST [{corner_title}]</span>
+                        <span style="font-size:11.5px; background:rgba(0,114,206,0.12); color:#0072CE; padding:3px 8px; border-radius:8px; font-weight:bold;">식판 구성</span>
+                    </div>
+                    <div style="background:rgba(0,56,118,0.06); border:1.5px solid #003876; border-radius:12px; padding:10px; text-align:center; font-weight:800; color:#003876; font-size:14px; margin-bottom:8px;">
+                        🍲 {main_dish}
+                    </div>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px;">
+                """
+                
+                for dish in sub_dishes:
+                    grid_html += f"""<div style="background:#F4F8FC; border-radius:10px; padding:8px; text-align:center; font-size:12.5px; color:#102A43; border:1px solid rgba(0,56,118,0.08); font-weight:500;">🥢 {dish}</div>"""
+                
+                if dessert and dessert != "-" and dessert != "nan":
+                    grid_html += f"""<div style="grid-column: span 2; background:#FFF7ED; border-radius:10px; padding:8px; text-align:center; font-size:12.5px; color:#EA580C; border:1px solid #FFEDD5; font-weight:700;">🍦 후식: {dessert}</div>"""
 
-@st.cache_data(ttl=300)
-def fetch_diet_data():
-    if not sheet_diet:
-        return []
-    try:
-        return sheet_diet.get_all_records()
-    except Exception:
-        return []
+                grid_html += "</div></div>"
+                st.markdown(grid_html, unsafe_allow_html=True)
 
-try:
-    current_stock = safe_int(fetch_stock_data(), 0)
-except Exception:
-    current_stock = 0
-
-if current_stock > 30:
-    status_label = "🟢 이용가능"
-    badge_bg, badge_color = "rgba(16, 185, 129, 0.12)", "#059669"
-    cup_fill_y = 55
-elif current_stock > 0:
-    status_label = "🟡 소진임박"
-    badge_bg, badge_color = "rgba(245, 158, 11, 0.12)", "#d97706"
-    cup_fill_y = 100
-else:
-    status_label = "🔴 카페마감"
-    badge_bg, badge_color = "rgba(239, 68, 68, 0.12)", "#dc2626"
-    cup_fill_y = 140
-
-_coffee_height = 140 - cup_fill_y
-coffee_fill_svg = f'<rect x="20" y="{cup_fill_y}" width="120" height="{_coffee_height}" fill="#0072CE" clip-path="url(#mugClip)" />' if _coffee_height > 0 else ""
-mug_svg = (
-    '<svg class="cup-illustration" viewBox="0 0 160 170" xmlns="http://www.w3.org/2000/svg">'
-    '<defs><clipPath id="mugClip"><path d="M25,40 L135,40 L127,132 Q127,140 119,140 L41,140 Q33,140 33,132 Z" /></clipPath></defs>'
-    + coffee_fill_svg
-    + '<path d="M25,40 L135,40 L127,132 Q127,140 119,140 L41,140 Q33,140 33,132 Z" fill="none" stroke="#003876" stroke-width="4" stroke-linejoin="round" />'
-    '<path d="M135,55 C165,55 165,105 135,105" fill="none" stroke="#003876" stroke-width="6" stroke-linecap="round" />'
-    '</svg>'
-)
-
+    st.write("")
+    # 이번 주 전체 식단표 보기
+    with st.expander("📅 이번 주 전체 식단표 펼쳐보기"):
+        if diet_list:
+            df = pd.DataFrame(diet_list)
+            # 불필요한 번호, 등록일자 열이 있다면 제외하고 노출
+            cols_to_show = [c for c in ["날짜", "요일", "메뉴구분", "메뉴", "후식"] if c in df.columns]
+            if cols_to_show:
+                st.dataframe(df[cols_to_show], use_container_width=True, hide_index=True)
+            else:
+                st.dataframe(df, use_container_width=True, hide_index=True)
 # -------------------------------------------------------------------
 # 4. 기능 팝업 모달
 # -------------------------------------------------------------------
