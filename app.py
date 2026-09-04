@@ -17,16 +17,16 @@ st.set_page_config(
 KST = timezone(timedelta(hours=9))
 now_kst = datetime.now(KST)
 
-if "theme_mode" not in st.session_state:
-    st.session_state.theme_mode = "☀️ 라이트"
+if "is_dark" not in st.session_state:
+    st.session_state.is_dark = False
 
 if "active_modal" not in st.session_state:
     st.session_state.active_modal = None
 
-is_dark = (st.session_state.theme_mode == "🌙 다크")
+is_dark = st.session_state.is_dark
 
 # -------------------------------------------------------------------
-# 2. 고대비 테마 팔레트 (선명한 명도 대비)
+# 2. 고대비 테마 팔레트 (라이트 / 다크)
 # -------------------------------------------------------------------
 if is_dark:
     c = {
@@ -50,9 +50,9 @@ else:
         "bg_app": "#F1F5F9",
         "card_bg": "#FFFFFF",
         "card_sub": "#F8FAFC",
-        "border": "#94A3B8",
+        "border": "#CBD5E1",
         "border_bold": "#003876",
-        "text_main": "#0F172A",
+        "text_main": "#0F172A",       # 고대비 딥 네이비 블랙
         "text_sub": "#334155",
         "accent": "#003876",
         "badge_bg": "#DCFCE7",
@@ -63,24 +63,21 @@ else:
         "mug_fill": "#0072CE",
     }
 
-mobile_css = f"""
+native_mobile_css = f"""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Gaegu:wght@700&family=Noto+Sans+KR:wght@500;700;900&display=swap');
 
-    /* 모바일 기본 폰트 스케일 및 배경 고정 */
     html, body, .stApp {{
         background-color: {c['bg_app']} !important;
         color: {c['text_main']} !important;
-        font-family: 'Noto Sans KR', sans-serif !important;
-        font-size: 16px !important;
-        -webkit-text-size-adjust: 100% !important;
+        font-family: 'Noto Sans KR', -apple-system, sans-serif !important;
         overflow-x: hidden !important;
     }}
     
     .main .block-container {{
         max-width: 430px !important;
         width: 100% !important;
-        padding-top: 0.8rem !important;
+        padding-top: 1rem !important;
         padding-bottom: 2.5rem !important;
         padding-left: 14px !important;
         padding-right: 14px !important;
@@ -89,14 +86,73 @@ mobile_css = f"""
     }}
     footer {{ visibility: hidden !important; height: 0px !important; }}
 
-    /* 라디오 버튼 텍스트 가독성 */
-    div[data-testid="stRadio"] label p {{
-        color: {c['text_main']} !important;
-        font-weight: 800 !important;
-        font-size: 13px !important;
+    /* 📌 1. 상단 일체형 헤더 (한 줄 정렬 강제) */
+    .mobile-header-wrapper {{
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        margin-bottom: 12px;
+    }}
+    .header-left-title {{
+        display: flex;
+        flex-direction: column;
+    }}
+    .header-sub-tag {{
+        font-size: 11px;
+        font-weight: 800;
+        color: {c['accent']};
+        letter-spacing: 0.5px;
+    }}
+    .header-main-title {{
+        font-family: 'Gaegu', cursive;
+        font-size: 25px;
+        font-weight: 700;
+        color: {c['text_main']};
+        margin-top: -3px;
+        line-height: 1.1;
+    }}
+    .header-right-tools {{
+        display: flex;
+        align-items: center;
+        gap: 8px;
     }}
 
-    /* 커피 시그니처 카드 */
+    /* 테마 스위치 버튼 */
+    div.theme-btn-box button {{
+        background-color: {c['card_bg']} !important;
+        border: 1.5px solid {c['border']} !important;
+        border-radius: 20px !important;
+        padding: 5px 10px !important;
+        height: 36px !important;
+        min-height: 36px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        box-shadow: {c['shadow']} !important;
+    }}
+    div.theme-btn-box button p {{
+        color: {c['text_main']} !important;
+        font-weight: 800 !important;
+        font-size: 11.5px !important;
+        margin: 0 !important;
+    }}
+
+    /* 텔레그램 원형 버튼 */
+    .telegram-circle-btn {{
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background-color: {c['card_bg']};
+        border: 1.5px solid {c['border']};
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        box-shadow: {c['shadow']};
+    }}
+
+    /* 📌 2. 커피잔 카드 */
     .cup-card {{
         background: {c['card_bg']} !important;
         border: 2px solid {c['border']} !important;
@@ -136,36 +192,23 @@ mobile_css = f"""
         border: 2px solid;
     }}
 
-    /* 📱 모바일 1행 3열 그리드 강제 (가로 밀림 완전 방지) */
-    div[data-testid="stHorizontalBlock"] {{
-        display: grid !important;
-        grid-template-columns: repeat(3, 1fr) !important;
-        gap: 10px !important;
-        width: 100% !important;
+    /* 📌 3. 하단 편의 서비스 모바일 완벽 1:1 정사각형 버튼 */
+    .service-grid {{
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 10px;
+        width: 100%;
+        margin-top: 8px;
     }}
-    div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {{
-        width: 100% !important;
-        min-width: 0 !important;
-        padding: 0 !important;
-    }}
-
-    /* 📱 정사각형(1:1) 버튼 & 큼직한 텍스트 */
-    .square-btn {{
-        width: 100% !important;
-        aspect-ratio: 1 / 1 !important;
-    }}
-    .square-btn .stButton {{
-        width: 100% !important;
-        height: 100% !important;
-    }}
-    .square-btn .stButton > button {{
-        width: 100% !important;
-        height: 100% !important;
-        aspect-ratio: 1 / 1 !important;
+    div.sq-btn button {{
         background-color: {c['card_bg']} !important;
         border: 2px solid {c['border']} !important;
-        border-radius: 18px !important;
-        padding: 6px !important;
+        border-radius: 20px !important;
+        width: 100% !important;
+        aspect-ratio: 1 / 1 !important;
+        min-height: unset !important;
+        height: auto !important;
+        padding: 8px 4px !important;
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
@@ -173,14 +216,14 @@ mobile_css = f"""
         box-shadow: {c['shadow']} !important;
         transition: transform 0.1s ease !important;
     }}
-    .square-btn .stButton > button:active {{
+    div.sq-btn button:active {{
         transform: scale(0.95);
     }}
-    .square-btn .stButton > button p {{
+    div.sq-btn button p {{
         color: {c['accent']} !important;
         font-weight: 900 !important;
-        font-size: 14px !important;       /* 글자 크기 시원하게 확대 */
-        line-height: 1.3 !important;
+        font-size: 13px !important;
+        line-height: 1.25 !important;
         margin: 0 !important;
         text-align: center !important;
         white-space: pre-line !important;
@@ -215,7 +258,7 @@ mobile_css = f"""
     }}
 </style>
 """
-st.markdown(mobile_css, unsafe_allow_html=True)
+st.markdown(native_mobile_css, unsafe_allow_html=True)
 
 def safe_int(val, default=0):
     try:
@@ -300,40 +343,34 @@ mug_svg = (
 )
 
 # -------------------------------------------------------------------
-# 4. 상단 모바일 헤더
+# 4. 상단 모바일 일체형 헤더 (한 줄 정렬)
 # -------------------------------------------------------------------
-h_col1, h_col2, h_col3 = st.columns([5.2, 3.8, 1.0])
+head_left, head_mid, head_right = st.columns([6, 2.5, 1.5])
 
-with h_col1:
+with head_left:
     st.markdown(
         f"""
-        <div style="font-size:11px; font-weight:800; color:{c['accent']}; letter-spacing:0.3px;">KIOST 사내 카페</div>
-        <div style="font-family:'Gaegu', cursive; font-size:25px; font-weight:700; color:{c['text_main']}; margin-top:-3px;">소담터 알리미 ☕</div>
+        <div class="header-left-title">
+            <span class="header-sub-tag">KIOST 사내 카페</span>
+            <span class="header-main-title">소담터 알리미 ☕</span>
+        </div>
         """,
         unsafe_allow_html=True,
     )
 
-with h_col2:
-    selected_theme = st.radio(
-        "테마 모드",
-        options=["☀️ 라이트", "🌙 다크"],
-        index=1 if is_dark else 0,
-        horizontal=True,
-        label_visibility="collapsed",
-        key="theme_radio_selector"
-    )
-    if selected_theme != st.session_state.theme_mode:
-        st.session_state.theme_mode = selected_theme
+with head_mid:
+    st.markdown('<div class="theme-btn-box">', unsafe_allow_html=True)
+    theme_text = "🌙 다크" if not is_dark else "☀️ 라이트"
+    if st.button(theme_text, key="toggle_theme_btn", use_container_width=True):
+        st.session_state.is_dark = not st.session_state.is_dark
         st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
 
-with h_col3:
+with head_right:
     st.markdown(
         f"""
-        <a href="https://t.me/+n5J-xg8BI4tkYmE1" target="_blank" style="text-decoration:none; display:flex; flex-direction:column; align-items:center;">
-            <div style="width:34px; height:34px; border-radius:50%; background:{c['card_bg']}; display:flex; align-items:center; justify-content:center; border:1.5px solid {c['border']}; font-size:16px;">
-                ✈️
-            </div>
-            <div style="font-size:9.5px; color:{c['text_sub']}; margin-top:2px; font-weight:800;">알람</div>
+        <a href="https://t.me/+n5J-xg8BI4tkYmE1" target="_blank" class="telegram-circle-btn">
+            <span style="font-size: 16px;">✈️</span>
         </a>
         """,
         unsafe_allow_html=True,
@@ -353,29 +390,29 @@ st.markdown(
 )
 
 # -------------------------------------------------------------------
-# 6. 하단 편의 서비스 (정사각형 1:1 버튼 & 선명한 글씨)
+# 6. 하단 편의 서비스 (순수 3열 가로 정렬 & 정사각형 버튼)
 # -------------------------------------------------------------------
-st.markdown(f"<div style='margin-top:16px; margin-bottom:8px; font-size:14px; font-weight:800; color:{c['text_sub']};'>KIOST 편의 서비스</div>", unsafe_allow_html=True)
+st.markdown(f"<div style='margin-top:16px; margin-bottom:8px; font-size:13.5px; font-weight:800; color:{c['text_sub']};'>KIOST 편의 서비스</div>", unsafe_allow_html=True)
 
 btn_c1, btn_c2, btn_c3 = st.columns(3)
 
 with btn_c1:
-    st.markdown('<div class="square-btn">', unsafe_allow_html=True)
-    if st.button("⏰\n근무 계산", key="btn_work", use_container_width=True):
+    st.markdown('<div class="sq-btn">', unsafe_allow_html=True)
+    if st.button("⏰\n\n근무 계산", key="btn_work", use_container_width=True):
         st.session_state.active_modal = "work" if st.session_state.active_modal != "work" else None
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
 with btn_c2:
-    st.markdown('<div class="square-btn">', unsafe_allow_html=True)
-    if st.button("🍽️\n근처 맛집", key="btn_res", use_container_width=True):
+    st.markdown('<div class="sq-btn">', unsafe_allow_html=True)
+    if st.button("🍽️\n\n근처 맛집", key="btn_res", use_container_width=True):
         st.session_state.active_modal = "res" if st.session_state.active_modal != "res" else None
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
 with btn_c3:
-    st.markdown('<div class="square-btn">', unsafe_allow_html=True)
-    if st.button("🍱\n구내 식당", key="btn_diet", use_container_width=True):
+    st.markdown('<div class="sq-btn">', unsafe_allow_html=True)
+    if st.button("🍱\n\n구내 식당", key="btn_diet", use_container_width=True):
         st.session_state.active_modal = "diet" if st.session_state.active_modal != "diet" else None
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
