@@ -131,15 +131,35 @@ high_contrast_css = f"""
         border: 2px solid;
     }}
 
-    /* 📱 편의 서비스 정사각형(1:1) 버튼 */
-    div[data-testid="column"] .square-btn-wrapper button {{
-        background-color: {c['card_bg']} !important;
-        border: 2px solid {c['border']} !important;
-        border-radius: 22px !important;
+    /* 📱 편의 서비스 3칸 컬럼 가로 정렬 강제 유지 (모바일 붕괴 방지) */
+    div[data-testid="stHorizontalBlock"]:has(.square-btn-wrapper) {{
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        gap: 10px !important;
+    }}
+    div[data-testid="stHorizontalBlock"]:has(.square-btn-wrapper) > div[data-testid="column"] {{
+        flex: 1 1 0px !important;
+        min-width: 0 !important;
+    }}
+
+    /* 📱 완벽한 정사각형 (1:1 Aspect Ratio) 버튼 강제 */
+    .square-btn-wrapper {{
         width: 100% !important;
         aspect-ratio: 1 / 1 !important;
-        min-height: unset !important;
-        padding: 0 !important;
+    }}
+    .square-btn-wrapper .stButton {{
+        width: 100% !important;
+        height: 100% !important;
+    }}
+    .square-btn-wrapper .stButton > button {{
+        width: 100% !important;
+        height: 100% !important;
+        aspect-ratio: 1 / 1 !important;
+        background-color: {c['card_bg']} !important;
+        border: 2px solid {c['border']} !important;
+        border-radius: 20px !important;
+        padding: 4px !important;
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
@@ -147,21 +167,22 @@ high_contrast_css = f"""
         box-shadow: {c['shadow']} !important;
         transition: all 0.15s ease-in-out !important;
     }}
-    div[data-testid="column"] .square-btn-wrapper button:hover {{
+    .square-btn-wrapper .stButton > button:hover {{
         border-color: {c['accent']} !important;
         background-color: {c['card_sub']} !important;
         transform: translateY(-3px);
     }}
-    div[data-testid="column"] .square-btn-wrapper button:active {{
-        transform: scale(0.96);
+    .square-btn-wrapper .stButton > button:active {{
+        transform: scale(0.95);
     }}
-    div[data-testid="column"] .square-btn-wrapper button p {{
+    .square-btn-wrapper .stButton > button p {{
         color: {c['accent']} !important;
         font-weight: 900 !important;
         font-size: 13px !important;
-        line-height: 1.35 !important;
+        line-height: 1.3 !important;
         margin: 0 !important;
         text-align: center !important;
+        white-space: pre-line !important;
     }}
 
     /* 팝업 레이어 */
@@ -330,7 +351,7 @@ st.markdown(
 )
 
 # -------------------------------------------------------------------
-# 6. 하단 편의 서비스 (정사각형 1:1 비율 그리드)
+# 6. 하단 편의 서비스 (정사각형 1:1 고정 퀵버튼)
 # -------------------------------------------------------------------
 st.markdown(f"<p style='margin-top:18px; margin-bottom:10px; font-size:13px; font-weight:800; color:{c['text_sub']} !important;'>KIOST 편의 서비스</p>", unsafe_allow_html=True)
 
@@ -338,7 +359,7 @@ btn_c1, btn_c2, btn_c3 = st.columns(3)
 
 with btn_c1:
     st.markdown('<div class="square-btn-wrapper">', unsafe_allow_html=True)
-    if st.button("⏰\n\n근무 계산기", key="btn_work", use_container_width=True):
+    if st.button("⏰\n\n근무 계산", key="btn_work", use_container_width=True):
         st.session_state.active_modal = "work" if st.session_state.active_modal != "work" else None
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
@@ -352,7 +373,7 @@ with btn_c2:
 
 with btn_c3:
     st.markdown('<div class="square-btn-wrapper">', unsafe_allow_html=True)
-    if st.button("🍱\n\n구내식당", key="btn_diet", use_container_width=True):
+    if st.button("🍱\n\n구내 식당", key="btn_diet", use_container_width=True):
         st.session_state.active_modal = "diet" if st.session_state.active_modal != "diet" else None
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
