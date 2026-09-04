@@ -26,10 +26,9 @@ if "active_modal" not in st.session_state:
 is_dark = (st.session_state.theme_mode == "🌙 다크")
 
 # -------------------------------------------------------------------
-# 2. 고대비 테마 팔레트 (라이트 모드 완전 흑색 강제)
+# 2. 고대비 테마 팔레트 (라이트/다크)
 # -------------------------------------------------------------------
 if is_dark:
-    # 🌙 다크 모드
     c = {
         "bg_app": "#0A1128",
         "card_bg": "#1C2541",
@@ -47,16 +46,15 @@ if is_dark:
         "mug_fill": "#0096C7",
     }
 else:
-    # ☀️ 라이트 모드 (완전 선명한 딥 블랙 & KIOST 블루)
     c = {
         "bg_app": "#EDF2F7",
         "card_bg": "#FFFFFF",
         "card_sub": "#F1F5F9",
         "border": "#94A3B8",
         "border_bold": "#003876",
-        "text_main": "#090A0C",       # 완전한 블랙에 가까운 색상으로 시인성 확보
-        "text_sub": "#1E293B",        # 또렷한 진회색
-        "accent": "#003876",          # 딥 네이비 블루
+        "text_main": "#090A0C",
+        "text_sub": "#1E293B",
+        "accent": "#003876",
         "badge_bg": "#DCFCE7",
         "badge_border": "#15803D",
         "badge_text": "#15803D",
@@ -69,7 +67,6 @@ high_contrast_css = f"""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Gaegu:wght@700&family=Noto+Sans+KR:wght@400;600;700;900&display=swap');
 
-    /* 1. 최상위 앱 배경 및 텍스트 색상 강제 지정 */
     html, body, [class*="css"], .stApp {{
         background-color: {c['bg_app']} !important;
         color: {c['text_main']} !important;
@@ -85,19 +82,17 @@ high_contrast_css = f"""
     }}
     footer {{ visibility: hidden !important; height: 0px !important; }}
 
-    /* 2. 라이트 모드에서 흰색으로 사라지는 태그 전부 덮어쓰기 */
     p, span, label, div, h1, h2, h3, h4, h5, h6, caption {{
         color: {c['text_main']} !important;
     }}
 
-    /* 3. 라디오 버튼 텍스트 (☀️ 라이트 / 🌙 다크) 색상 고정 */
     div[data-testid="stRadio"] label p {{
         color: {c['text_main']} !important;
         font-weight: 800 !important;
         font-size: 13px !important;
     }}
 
-    /* 4. 시그니처 커피잔 카드 */
+    /* 커피 시그니처 카드 */
     .cup-card {{
         background: {c['card_bg']} !important;
         border: 2px solid {c['border']} !important;
@@ -136,13 +131,15 @@ high_contrast_css = f"""
         border: 2px solid;
     }}
 
-    /* 5. 📱 편의 서비스 3개 버튼 글자색 강제 */
-    div[data-testid="column"] .quick-service-btn button {{
+    /* 📱 편의 서비스 정사각형(1:1) 버튼 */
+    div[data-testid="column"] .square-btn-wrapper button {{
         background-color: {c['card_bg']} !important;
         border: 2px solid {c['border']} !important;
-        border-radius: 18px !important;
-        padding: 12px 4px !important;
-        min-height: 86px !important;
+        border-radius: 22px !important;
+        width: 100% !important;
+        aspect-ratio: 1 / 1 !important;
+        min-height: unset !important;
+        padding: 0 !important;
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
@@ -150,19 +147,24 @@ high_contrast_css = f"""
         box-shadow: {c['shadow']} !important;
         transition: all 0.15s ease-in-out !important;
     }}
-    div[data-testid="column"] .quick-service-btn button:hover {{
+    div[data-testid="column"] .square-btn-wrapper button:hover {{
         border-color: {c['accent']} !important;
         background-color: {c['card_sub']} !important;
-        transform: translateY(-2px);
+        transform: translateY(-3px);
     }}
-    div[data-testid="column"] .quick-service-btn button p {{
+    div[data-testid="column"] .square-btn-wrapper button:active {{
+        transform: scale(0.96);
+    }}
+    div[data-testid="column"] .square-btn-wrapper button p {{
         color: {c['accent']} !important;
         font-weight: 900 !important;
-        font-size: 14px !important;
-        line-height: 1.3 !important;
+        font-size: 13px !important;
+        line-height: 1.35 !important;
+        margin: 0 !important;
+        text-align: center !important;
     }}
 
-    /* 6. 팝업 레이어 */
+    /* 팝업 레이어 */
     .popup-box {{
         background: {c['card_bg']} !important;
         border: 2.5px solid {c['border_bold']} !important;
@@ -172,7 +174,7 @@ high_contrast_css = f"""
         box-shadow: {c['shadow']};
     }}
 
-    /* 7. 입력창, 체크박스 텍스트 */
+    /* 입력 폼 컨트롤 */
     .stTextInput input, .stNumberInput input, .stTimeInput input {{
         background-color: {c['card_sub']} !important;
         color: {c['text_main']} !important;
@@ -183,8 +185,6 @@ high_contrast_css = f"""
         color: {c['text_main']} !important;
         font-weight: 700 !important;
     }}
-
-    /* 8. 탭 텍스트 색상 */
     .stTabs [data-baseweb="tab"] div {{
         color: {c['text_main']} !important;
         font-weight: 800 !important;
@@ -330,35 +330,35 @@ st.markdown(
 )
 
 # -------------------------------------------------------------------
-# 6. 하단 편의 서비스
+# 6. 하단 편의 서비스 (정사각형 1:1 비율 그리드)
 # -------------------------------------------------------------------
-st.markdown(f"<p style='margin-top:16px; margin-bottom:8px; font-size:13px; font-weight:800; color:{c['text_sub']} !important;'>KIOST 편의 서비스</p>", unsafe_allow_html=True)
+st.markdown(f"<p style='margin-top:18px; margin-bottom:10px; font-size:13px; font-weight:800; color:{c['text_sub']} !important;'>KIOST 편의 서비스</p>", unsafe_allow_html=True)
 
 btn_c1, btn_c2, btn_c3 = st.columns(3)
 
 with btn_c1:
-    st.markdown('<div class="quick-service-btn">', unsafe_allow_html=True)
-    if st.button("⏰\n근무 계산기", key="btn_work", use_container_width=True):
+    st.markdown('<div class="square-btn-wrapper">', unsafe_allow_html=True)
+    if st.button("⏰\n\n근무 계산기", key="btn_work", use_container_width=True):
         st.session_state.active_modal = "work" if st.session_state.active_modal != "work" else None
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
 with btn_c2:
-    st.markdown('<div class="quick-service-btn">', unsafe_allow_html=True)
-    if st.button("🍽️\n근처 맛집", key="btn_res", use_container_width=True):
+    st.markdown('<div class="square-btn-wrapper">', unsafe_allow_html=True)
+    if st.button("🍽️\n\n근처 맛집", key="btn_res", use_container_width=True):
         st.session_state.active_modal = "res" if st.session_state.active_modal != "res" else None
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
 with btn_c3:
-    st.markdown('<div class="quick-service-btn">', unsafe_allow_html=True)
-    if st.button("🍱\n구내식당", key="btn_diet", use_container_width=True):
+    st.markdown('<div class="square-btn-wrapper">', unsafe_allow_html=True)
+    if st.button("🍱\n\n구내식당", key="btn_diet", use_container_width=True):
         st.session_state.active_modal = "diet" if st.session_state.active_modal != "diet" else None
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
 # -------------------------------------------------------------------
-# 7. 간단한 팝업 레이어 (오버레이 컨테이너)
+# 7. 팝업 레이어 (오버레이 컨테이너)
 # -------------------------------------------------------------------
 if st.session_state.active_modal:
     st.markdown('<div class="popup-box">', unsafe_allow_html=True)
