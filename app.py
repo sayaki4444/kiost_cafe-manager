@@ -5,7 +5,7 @@ import streamlit as st
 import pandas as pd
 
 # -------------------------------------------------------------------
-# 1. 페이지 기본 설정
+# 1. 페이지 기본 설정 및 시간대 정의
 # -------------------------------------------------------------------
 st.set_page_config(
     page_title="소담터 - KIOST 사내 카페",
@@ -14,29 +14,29 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
+KST = timezone(timedelta(hours=9))
+now_kst = datetime.now(KST)
+
 # -------------------------------------------------------------------
-# 2. KIOST 블루톤 테마 & 일체형 퀵버튼 커스텀 CSS
+# 2. KIOST 고대비 블루톤 CSS (다크모드 글씨 증발 완벽 방지)
 # -------------------------------------------------------------------
 kiost_blue_css = """
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap');
 
     :root {
-        --kiost-primary: #003876;       /* 딥 오션 블루 */
-        --kiost-secondary: #0072CE;     /* 마린 블루 */
-        --kiost-light: #E8F1F8;         /* 연한 블루 배경 */
-        --kiost-teal: #00838F;
-        --bg-gradient-start: #EBF3FA;
-        --bg-gradient-end: #F4F8FC;
+        --kiost-primary: #003876;
+        --kiost-secondary: #0072CE;
+        --text-strong: #0A1C30;       /* 어떤 배경에서도 잘 보이는 최고 대비 텍스트 */
+        --text-sub: #334E68;          /* 보조 설명용 진한 텍스트 */
         --card-bg: #FFFFFF;
-        --text-main: #0B2545;
-        --text-sub: #5C768D;
-        --border-color: rgba(0, 56, 118, 0.12);
+        --border-color: rgba(0, 56, 118, 0.18);
     }
 
+    /* 전체 화면 배경 */
     .stApp {
-        background: linear-gradient(180deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
-        color: var(--text-main);
+        background: linear-gradient(180deg, #E6F0FA 0%, #F4F8FC 100%) !important;
+        color: var(--text-strong) !important;
         font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
     .main .block-container {
@@ -49,6 +49,11 @@ kiost_blue_css = """
     }
     footer { visibility: hidden !important; height: 0px !important; }
 
+    /* 모든 텍스트, 라벨, 캡션 강제 고대비 색상 적용 */
+    p, span, label, div, h1, h2, h3, h4, h5, h6 {
+        color: var(--text-strong);
+    }
+
     /* 커피 시그니처 카드 */
     .cup-card {
         border-radius: 24px;
@@ -57,7 +62,7 @@ kiost_blue_css = """
         max-width: 300px;
         text-align: center;
         background: var(--card-bg);
-        border: 1px solid var(--border-color);
+        border: 1.5px solid var(--border-color);
         box-shadow: 0 8px 24px rgba(0, 56, 118, 0.08);
     }
     .cup-illustration {
@@ -70,12 +75,13 @@ kiost_blue_css = """
         font-family: 'Gaegu', cursive;
         font-size: 28px;
         font-weight: 700;
-        color: var(--kiost-primary);
+        color: var(--kiost-primary) !important;
         margin-top: 4px;
     }
     .cup-hours {
-        font-size: 12px;
-        color: var(--text-sub);
+        font-size: 12.5px;
+        font-weight: 600;
+        color: var(--text-sub) !important;
         margin-bottom: 8px;
     }
     .cup-badge {
@@ -84,46 +90,49 @@ kiost_blue_css = """
         font-weight: 700;
         padding: 4px 14px;
         border-radius: 12px;
-        border: 1px solid;
+        border: 1.5px solid;
     }
 
-    /* 📱 일체형 컴팩트 퀵버튼 컨테이너 */
+    /* 📱 일체형 퀵메뉴 버튼 */
     div[data-testid="column"] .stButton > button {
-        background-color: var(--card-bg) !important;
+        background-color: #FFFFFF !important;
         border: 1.5px solid var(--border-color) !important;
         border-radius: 18px !important;
-        padding: 12px 6px 10px 6px !important;
+        padding: 10px 4px !important;
         height: auto !important;
         min-height: 86px !important;
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
         justify-content: center !important;
-        box-shadow: 0 4px 12px rgba(0, 56, 118, 0.05) !important;
+        box-shadow: 0 4px 12px rgba(0, 56, 118, 0.06) !important;
         transition: all 0.2s ease !important;
+    }
+    div[data-testid="column"] .stButton > button p {
+        margin: 0 !important;
+        line-height: 1.3 !important;
+        color: var(--kiost-primary) !important;
+        font-weight: 800 !important;
+        font-size: 13px !important;
     }
     div[data-testid="column"] .stButton > button:hover {
         border-color: var(--kiost-secondary) !important;
         background-color: #F0F6FC !important;
         transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(0, 114, 206, 0.15) !important;
-    }
-    div[data-testid="column"] .stButton > button:active {
-        transform: scale(0.96);
     }
 
-    /* 버튼 내부 텍스트 및 이모지 스타일 커스텀 */
-    div[data-testid="column"] .stButton > button p {
-        margin: 0 !important;
-        line-height: 1.3 !important;
-        white-space: pre-line !important;
+    /* 입력창 및 모달 내부 고대비 강제 */
+    .stTextInput input, .stNumberInput input, .stTimeInput input {
+        background-color: #FFFFFF !important;
+        color: #0A1C30 !important;
+        border: 1.5px solid #CBD5E1 !important;
     }
-
-    /* 다이얼로그 모달 내부 탭/버튼 스타일 */
-    .stDialog .stButton > button {
+    .stDialog {
+        background-color: #FFFFFF !important;
+    }
+    .stDialog button {
         background-color: var(--kiost-primary) !important;
-        color: #ffffff !important;
-        border-radius: 12px !important;
+        color: #FFFFFF !important;
         font-weight: 700 !important;
     }
 </style>
@@ -137,100 +146,89 @@ def safe_int(val, default=0):
         return default
 
 # -------------------------------------------------------------------
-# 3번: 구내식당 식판 모달 (실제 KIOST 식단 시트 구조 완벽 대응)
+# 3. 구글 시트 연동 ('재고' 및 '식단' 탭 동기화)
 # -------------------------------------------------------------------
-@st.dialog("🍱 오늘 구내식당 점심 메뉴")
-def show_cafeteria_modal():
-    weekdays_kr = ["월", "화", "수", "목", "금", "토", "일"]
-    today_weekday_idx = now_kst.weekday()
-    today_weekday_str = weekdays_kr[today_weekday_idx]
-    
-    # 2026/09/04 및 2026-09-04 포맷 둘 다 대응
-    today_date_slash = now_kst.strftime("%Y/%m/%d")
-    today_display_str = now_kst.strftime("%m월 %d일")
+SCOPES = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
 
-    st.caption(f"📅 {today_display_str} ({today_weekday_str}요일) 중식 11:30 ~ 13:00")
+@st.cache_resource
+def get_gspread_client():
+    try:
+        if "gcp_service_account" in st.secrets:
+            secret_data = st.secrets["gcp_service_account"]
+            creds_dict = json.loads(secret_data) if isinstance(secret_data, str) else dict(secret_data)
+            return gspread.service_account_from_dict(creds_dict, scopes=SCOPES)
+        return gspread.service_account(filename="service_account.json", scopes=SCOPES)
+    except Exception:
+        return None
 
-    diet_list = fetch_diet_data()
+gc = get_gspread_client()
 
-    if today_weekday_idx >= 5:
-        st.info("🌿 주말에는 구내식당을 운영하지 않습니다. 편안한 주말 보내세요!")
-        return
+@st.cache_resource
+def get_sheets(_gc):
+    if not _gc:
+        return None, None, None
+    try:
+        doc = _gc.open("kiost_sodam")
+        sheet_stock = doc.worksheet("재고")
 
-    # 오늘 날짜 또는 오늘 요일과 일치하는 행 필터링
-    today_menus = []
-    if diet_list:
-        for row in diet_list:
-            row_date = str(row.get("날짜", "")).strip().replace("-", "/")
-            row_day = str(row.get("요일", "")).strip()
-            
-            # 날짜가 오늘과 같거나, 날짜 정보가 비어있을 경우 요일 매칭
-            if row_date == today_date_slash or (not row_date and row_day == today_weekday_str):
-                today_menus.append(row)
-        
-        # 만약 날짜 매칭이 안 되었을 경우(테스트 등), 요일만으로 fallback 검색
-        if not today_menus:
-            for row in diet_list:
-                if str(row.get("요일", "")).strip() == today_weekday_str:
-                    today_menus.append(row)
+        try:
+            sheet_diet = doc.worksheet("식단")
+        except gspread.WorksheetNotFound:
+            sheet_diet = doc.add_worksheet(title="식단", rows=20, cols=7)
+            default_headers = ["No.", "날짜", "요일", "메뉴구분", "메뉴", "후식", "등록일자"]
+            sheet_diet.append_row(default_headers)
 
-    if not today_menus:
-        st.warning("⚠️ 오늘 등록된 식단 정보가 없습니다.")
-    else:
-        # 한식/일품 등 복수 코너가 있으면 탭으로 제공, 1개면 바로 노출
-        corner_names = [f"📍 {m.get('메뉴구분', '중식')}" for m in today_menus]
-        
-        if len(today_menus) > 1:
-            tabs = st.tabs(corner_names)
-        else:
-            tabs = [st.container()]
+        return doc, sheet_stock, sheet_diet
+    except Exception:
+        return None, None, None
 
-        for idx, current_tab in enumerate(tabs):
-            with current_tab:
-                menu_info = today_menus[idx]
-                corner_title = menu_info.get("메뉴구분", "기본식")
-                raw_menu_str = str(menu_info.get("메뉴", ""))
-                dessert = str(menu_info.get("후식", "")).strip()
+doc, sheet_stock, sheet_diet = get_sheets(gc)
 
-                # 쉼표(,)로 나열된 메뉴 쪼개기
-                dishes = [d.strip() for d in raw_menu_str.split(",") if d.strip()]
-                
-                main_dish = dishes[0] if dishes else "메뉴 준비중"
-                sub_dishes = dishes[1:] if len(dishes) > 1 else []
+@st.cache_data(ttl=10)
+def fetch_stock_data():
+    if not sheet_stock:
+        return 0
+    try:
+        return sheet_stock.acell("B1").value
+    except Exception:
+        return 0
 
-                # 식판 UI 렌더링
-                grid_html = f"""
-                <div style="background:#FFFFFF; border:1.5px solid rgba(0,56,118,0.12); border-radius:18px; padding:16px; margin-top:8px;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                        <span style="font-weight:800; font-size:15px; color:#003876;">KIOST [{corner_title}]</span>
-                        <span style="font-size:11.5px; background:rgba(0,114,206,0.12); color:#0072CE; padding:3px 8px; border-radius:8px; font-weight:bold;">식판 구성</span>
-                    </div>
-                    <div style="background:rgba(0,56,118,0.06); border:1.5px solid #003876; border-radius:12px; padding:10px; text-align:center; font-weight:800; color:#003876; font-size:14px; margin-bottom:8px;">
-                        🍲 {main_dish}
-                    </div>
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px;">
-                """
-                
-                for dish in sub_dishes:
-                    grid_html += f"""<div style="background:#F4F8FC; border-radius:10px; padding:8px; text-align:center; font-size:12.5px; color:#102A43; border:1px solid rgba(0,56,118,0.08); font-weight:500;">🥢 {dish}</div>"""
-                
-                if dessert and dessert != "-" and dessert != "nan":
-                    grid_html += f"""<div style="grid-column: span 2; background:#FFF7ED; border-radius:10px; padding:8px; text-align:center; font-size:12.5px; color:#EA580C; border:1px solid #FFEDD5; font-weight:700;">🍦 후식: {dessert}</div>"""
+@st.cache_data(ttl=60)
+def fetch_diet_data():
+    if not sheet_diet:
+        return []
+    try:
+        return sheet_diet.get_all_records()
+    except Exception:
+        return []
 
-                grid_html += "</div></div>"
-                st.markdown(grid_html, unsafe_allow_html=True)
+current_stock = safe_int(fetch_stock_data(), 0)
 
-    st.write("")
-    # 이번 주 전체 식단표 보기
-    with st.expander("📅 이번 주 전체 식단표 펼쳐보기"):
-        if diet_list:
-            df = pd.DataFrame(diet_list)
-            # 불필요한 번호, 등록일자 열이 있다면 제외하고 노출
-            cols_to_show = [c for c in ["날짜", "요일", "메뉴구분", "메뉴", "후식"] if c in df.columns]
-            if cols_to_show:
-                st.dataframe(df[cols_to_show], use_container_width=True, hide_index=True)
-            else:
-                st.dataframe(df, use_container_width=True, hide_index=True)
+# 카페 재고 현황 계산
+if current_stock > 30:
+    status_label = "🟢 이용가능"
+    badge_bg, badge_color = "#DCFCE7", "#15803D"
+    cup_fill_y = 55
+elif current_stock > 0:
+    status_label = "🟡 소진임박"
+    badge_bg, badge_color = "#FEF9C3", "#A16207"
+    cup_fill_y = 100
+else:
+    status_label = "🔴 카페마감"
+    badge_bg, badge_color = "#FEE2E2", "#B91C1C"
+    cup_fill_y = 140
+
+_coffee_height = 140 - cup_fill_y
+coffee_fill_svg = f'<rect x="20" y="{cup_fill_y}" width="120" height="{_coffee_height}" fill="#0072CE" clip-path="url(#mugClip)" />' if _coffee_height > 0 else ""
+mug_svg = (
+    '<svg class="cup-illustration" viewBox="0 0 160 170" xmlns="http://www.w3.org/2000/svg">'
+    '<defs><clipPath id="mugClip"><path d="M25,40 L135,40 L127,132 Q127,140 119,140 L41,140 Q33,140 33,132 Z" /></clipPath></defs>'
+    + coffee_fill_svg
+    + '<path d="M25,40 L135,40 L127,132 Q127,140 119,140 L41,140 Q33,140 33,132 Z" fill="none" stroke="#003876" stroke-width="4" stroke-linejoin="round" />'
+    '<path d="M135,55 C165,55 165,105 135,105" fill="none" stroke="#003876" stroke-width="6" stroke-linecap="round" />'
+    '</svg>'
+)
+
 # -------------------------------------------------------------------
 # 4. 기능 팝업 모달
 # -------------------------------------------------------------------
@@ -238,7 +236,7 @@ def show_cafeteria_modal():
 # 1번: 퇴근 계산기
 @st.dialog("⏰ 주 40시간 칼퇴 계산기")
 def show_worktime_modal():
-    st.write("목표 40시간 달성 후 금요일 조기/정시 퇴근 시각 계산")
+    st.markdown("<p style='font-size:13px; color:#334E68; font-weight:600;'>목표 40시간 달성 후 금요일 정시 퇴근 시각을 계산합니다.</p>", unsafe_allow_html=True)
     col1, col2 = st.columns(2)
     with col1:
         prev_hours = st.number_input("목요일까지 누적(시간)", min_value=0, max_value=40, value=32, step=1)
@@ -262,11 +260,11 @@ def show_worktime_modal():
             st.success("🎉 이미 주 40시간을 달성하셨습니다! 바로 퇴근 가능합니다.")
         else:
             remain_h, remain_m = divmod(remain_work_minutes, 60)
-            st.info(f"오늘 필요한 순 근무시간: **{remain_h}시간 {remain_m}분**")
+            st.info(f"오늘 채워야 할 순 근무시간: **{remain_h}시간 {remain_m}분**")
             st.markdown(
-                f"<div style='text-align:center; padding:15px; background:rgba(0,56,118,0.06); border-radius:14px; border:1.5px solid #003876;'>"
-                f"<span style='font-size:13px; color:#5C768D; font-weight:600;'>금요일 퇴근 가능 시간</span><br>"
-                f"<b style='font-size:26px; color:#003876;'>{leave_dt.strftime('%H:%M')}</b>"
+                f"<div style='text-align:center; padding:15px; background:#EFF6FF; border-radius:14px; border:2px solid #003876; margin-top:10px;'>"
+                f"<span style='font-size:13px; color:#1E3A8A; font-weight:700;'>금요일 퇴근 가능 시간</span><br>"
+                f"<b style='font-size:28px; color:#003876;'>{leave_dt.strftime('%H:%M')}</b>"
                 f"</div>",
                 unsafe_allow_html=True
             )
@@ -290,12 +288,12 @@ def show_restaurants_modal():
     for item in filtered:
         st.markdown(
             f"""
-            <div style="background:#EBF3FA; padding:12px 14px; border-radius:14px; border:1px solid rgba(0,56,118,0.1); margin-top:8px;">
+            <div style="background:#F1F5F9; padding:12px 14px; border-radius:14px; border:1px solid #CBD5E1; margin-top:8px;">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <b style="font-size:15px; color:#003876;">{item['name']}</b>
-                    <span style="font-size:12px; color:#0072CE; font-weight:700;">{item['rating']}</span>
+                    <span style="font-size:12px; color:#0284C7; font-weight:800;">{item['rating']}</span>
                 </div>
-                <div style="font-size:12px; color:#5C768D; margin-top:2px;">
+                <div style="font-size:12.5px; color:#334155; margin-top:2px; font-weight:500;">
                     {item['dist']} · 대표메뉴: {item['menu']}
                 </div>
             </div>
@@ -303,59 +301,90 @@ def show_restaurants_modal():
             unsafe_allow_html=True
         )
 
-# 3번: 구내식당 식판 모달
+# 3번: 구내식당 식판 모달 (실제 시트 컬럼 구조 완벽 대응)
 @st.dialog("🍱 오늘 구내식당 점심 메뉴")
 def show_cafeteria_modal():
     weekdays_kr = ["월", "화", "수", "목", "금", "토", "일"]
     today_weekday_idx = now_kst.weekday()
     today_weekday_str = weekdays_kr[today_weekday_idx]
-    today_str = now_kst.strftime("%m월 %d일")
+    
+    today_date_slash = now_kst.strftime("%Y/%m/%d")
+    today_display_str = now_kst.strftime("%m월 %d일")
 
-    st.caption(f"📅 {today_str} ({today_weekday_str}요일) 중식 11:30 ~ 13:00")
+    st.markdown(f"<p style='font-size:13px; color:#334E68; font-weight:700;'>📅 {today_display_str} ({today_weekday_str}요일) 중식 11:30 ~ 13:00</p>", unsafe_allow_html=True)
 
     diet_list = fetch_diet_data()
-    today_menu = None
-    if diet_list:
-        for row in diet_list:
-            if str(row.get("요일", "")).strip() == today_weekday_str:
-                today_menu = row
-                break
 
     if today_weekday_idx >= 5:
-        st.info("🌿 주말에는 구내식당을 운영하지 않습니다.")
-    elif today_menu:
-        main_dish = today_menu.get("메인메뉴", "식단 정보 없음")
-        rice_soup = today_menu.get("밥/국", "밥 / 국")
-        side1 = today_menu.get("반찬1", "-")
-        side2 = today_menu.get("반찬2", "-")
-        kimchi = today_menu.get("김치/기타", "김치")
+        st.info("🌿 주말에는 구내식당을 운영하지 않습니다. 편안한 주말 보내세요!")
+        return
 
-        st.markdown(
-            f"""
-            <div style="background:#FFFFFF; border:1.5px solid rgba(0,56,118,0.12); border-radius:18px; padding:16px;">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <span style="font-weight:800; font-size:15px; color:#003876;">KIOST 오늘의 중식</span>
-                    <span style="font-size:12px; background:rgba(0,114,206,0.12); color:#0072CE; padding:3px 8px; border-radius:8px; font-weight:bold;">운영중</span>
-                </div>
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-top:12px;">
-                    <div style="grid-column: span 2; background:rgba(0,56,118,0.06); border:1.5px solid #003876; border-radius:10px; padding:10px; text-align:center; font-weight:800; color:#003876;">🥩 {main_dish}</div>
-                    <div style="background:#F4F8FC; border-radius:10px; padding:8px; text-align:center; font-size:13px; border:1px solid rgba(0,56,118,0.08);">🍚 {rice_soup}</div>
-                    <div style="background:#F4F8FC; border-radius:10px; padding:8px; text-align:center; font-size:13px; border:1px solid rgba(0,56,118,0.08);">🥗 {side1}</div>
-                    <div style="background:#F4F8FC; border-radius:10px; padding:8px; text-align:center; font-size:13px; border:1px solid rgba(0,56,118,0.08);">🍳 {side2}</div>
-                    <div style="background:#F4F8FC; border-radius:10px; padding:8px; text-align:center; font-size:13px; border:1px solid rgba(0,56,118,0.08);">🥬 {kimchi}</div>
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+    # 오늘 날짜 또는 오늘 요일 매칭
+    today_menus = []
+    if diet_list:
+        for row in diet_list:
+            row_date = str(row.get("날짜", "")).strip().replace("-", "/")
+            row_day = str(row.get("요일", "")).strip()
+            
+            if row_date == today_date_slash or (not row_date and row_day == today_weekday_str):
+                today_menus.append(row)
+        
+        if not today_menus:
+            for row in diet_list:
+                if str(row.get("요일", "")).strip() == today_weekday_str:
+                    today_menus.append(row)
+
+    if not today_menus:
+        st.warning("⚠️ 오늘 등록된 식단 정보가 없습니다.")
     else:
-        st.warning("⚠️ 이번 주 식단 데이터가 등록되지 않았습니다.")
+        corner_names = [f"📍 {m.get('메뉴구분', '중식')}" for m in today_menus]
+        
+        if len(today_menus) > 1:
+            tabs = st.tabs(corner_names)
+        else:
+            tabs = [st.container()]
+
+        for idx, current_tab in enumerate(tabs):
+            with current_tab:
+                menu_info = today_menus[idx]
+                corner_title = menu_info.get("메뉴구분", "기본식")
+                raw_menu_str = str(menu_info.get("메뉴", ""))
+                dessert = str(menu_info.get("후식", "")).strip()
+
+                dishes = [d.strip() for d in raw_menu_str.split(",") if d.strip()]
+                main_dish = dishes[0] if dishes else "메뉴 준비중"
+                sub_dishes = dishes[1:] if len(dishes) > 1 else []
+
+                grid_html = f"""
+                <div style="background:#FFFFFF; border:1.5px solid #CBD5E1; border-radius:18px; padding:16px; margin-top:8px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                        <span style="font-weight:800; font-size:15px; color:#003876;">KIOST [{corner_title}]</span>
+                        <span style="font-size:11.5px; background:#E0F2FE; color:#0369A1; padding:3px 8px; border-radius:8px; font-weight:800;">식판 구성</span>
+                    </div>
+                    <div style="background:#EFF6FF; border:1.5px solid #003876; border-radius:12px; padding:10px; text-align:center; font-weight:800; color:#003876; font-size:14.5px; margin-bottom:8px;">
+                        🍲 {main_dish}
+                    </div>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px;">
+                """
+                
+                for dish in sub_dishes:
+                    grid_html += f"""<div style="background:#F8FAFC; border-radius:10px; padding:8px; text-align:center; font-size:12.5px; color:#0F172A; border:1px solid #E2E8F0; font-weight:600;">🥢 {dish}</div>"""
+                
+                if dessert and dessert != "-" and dessert != "nan":
+                    grid_html += f"""<div style="grid-column: span 2; background:#FFF7ED; border-radius:10px; padding:8px; text-align:center; font-size:12.5px; color:#C2410C; border:1.5px solid #FDBA74; font-weight:800;">🍦 후식: {dessert}</div>"""
+
+                grid_html += "</div></div>"
+                st.markdown(grid_html, unsafe_allow_html=True)
 
     st.write("")
     with st.expander("📅 이번 주 전체 식단표 펼쳐보기"):
         if diet_list:
             df = pd.DataFrame(diet_list)
-            st.dataframe(df, use_container_width=True, hide_index=True)
+            cols_to_show = [c for c in ["날짜", "요일", "메뉴구분", "메뉴", "후식"] if c in df.columns]
+            if cols_to_show:
+                st.dataframe(df[cols_to_show], use_container_width=True, hide_index=True)
+            else:
+                st.dataframe(df, use_container_width=True, hide_index=True)
 
 # -------------------------------------------------------------------
 # 5. 상단 헤더 & 커피잔 카드
@@ -368,10 +397,10 @@ st.markdown(
         <div style="font-family:'Gaegu', cursive; font-size:26px; font-weight:700; color:#003876; margin-top:-2px;">소담터 알리미 ☕</div>
     </div>
     <a href="https://t.me/+n5J-xg8BI4tkYmE1" target="_blank" style="text-decoration:none; display:flex; flex-direction:column; align-items:center;">
-        <div style="width:36px; height:36px; border-radius:50%; background:rgba(0,114,206,0.12); display:flex; align-items:center; justify-content:center; border:1.5px solid rgba(0,114,206,0.3); font-size:17px;">
+        <div style="width:36px; height:36px; border-radius:50%; background:#E0F2FE; display:flex; align-items:center; justify-content:center; border:1.5px solid #0072CE; font-size:17px;">
             ✈️
         </div>
-        <div style="font-size:10px; color:#0072CE; margin-top:2px; font-weight:700;">알람받기</div>
+        <div style="font-size:10px; color:#0072CE; margin-top:2px; font-weight:800;">알람받기</div>
     </a>
 </div>
 """,
@@ -383,7 +412,7 @@ st.markdown(
     f'{mug_svg}'
     f'<div class="cup-title">소담터</div>'
     f'<div class="cup-hours">운영시간 10:00 - 16:00</div>'
-    f'<div class="cup-badge" style="color:{badge_color}; background:{badge_bg}; border-color:{badge_color}40;">{status_label}</div>'
+    f'<div class="cup-badge" style="color:{badge_color}; background:{badge_bg}; border-color:{badge_color};">{status_label}</div>'
     f'</div>',
     unsafe_allow_html=True,
 )
@@ -391,21 +420,20 @@ st.markdown(
 # -------------------------------------------------------------------
 # 6. 하단 편의 서비스 (일체형 원클릭 컴팩트 버튼)
 # -------------------------------------------------------------------
-st.markdown("<div style='margin-top:20px; margin-bottom:10px; font-size:13px; font-weight:800; color:#5C768D;'>KIOST 편의 서비스</div>", unsafe_allow_html=True)
+st.markdown("<p style='margin-top:20px; margin-bottom:8px; font-size:13px; font-weight:800; color:#334E68;'>KIOST 편의 서비스</p>", unsafe_allow_html=True)
 
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    # 버튼 하나로 아이콘과 텍스트가 모두 렌더링되며, 클릭 시 바로 모달 오픈
-    if st.button("⏰\n**근무 계산기**", key="btn_work", use_container_width=True):
+    if st.button("⏰\n근무 계산기", key="btn_work", use_container_width=True):
         show_worktime_modal()
 
 with col2:
-    if st.button("🍽️\n**근처 맛집**", key="btn_res", use_container_width=True):
+    if st.button("🍽️\n근처 맛집", key="btn_res", use_container_width=True):
         show_restaurants_modal()
 
 with col3:
-    if st.button("🍱\n**구내식당**", key="btn_diet", use_container_width=True):
+    if st.button("🍱\n구내식당", key="btn_diet", use_container_width=True):
         show_cafeteria_modal()
 
 # -------------------------------------------------------------------
