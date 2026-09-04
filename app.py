@@ -1,4 +1,4 @@
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone, timedelta, time
 import json
 import gspread
 import requests
@@ -14,12 +14,11 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# 세션 상태에 테마 초기값 설정
 if "app_theme" not in st.session_state:
     st.session_state["app_theme"] = "☕ 오리지널 커피 다크"
 
 # -------------------------------------------------------------------
-# 2. 실시간 디자인 테마 구성 (4가지 프리셋)
+# 2. 테마 설정 및 커스텀 CSS
 # -------------------------------------------------------------------
 themes_config = {
     "☕ 오리지널 커피 다크": {
@@ -88,11 +87,9 @@ themes_config = {
     },
 }
 
-# 현재 세션에 설정된 테마 가져오기
 selected_theme = st.session_state["app_theme"]
 t = themes_config[selected_theme]
 
-# 테마에 최적화된 동적 커스텀 CSS 정의
 custom_css = f"""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap');
@@ -124,27 +121,9 @@ custom_css = f"""
         padding-right: 1rem !important;
         margin: 0 auto;
     }}
-    footer {{
-        visibility: hidden !important;
-        height: 0px !important;
-    }}
-    .top-header {{
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 20px;
-    }}
-    .header-title {{
-        font-family: 'Gaegu', cursive;
-        font-size: 28px;
-        font-weight: 700;
-        color: var(--text-primary);
-        margin: 0;
-    }}
-    .header-sub {{
-        font-size: 13px;
-        color: var(--text-secondary);
-    }}
+    footer {{ visibility: hidden !important; height: 0px !important; }}
+
+    /* 버튼 기본 스타일 */
     .stButton > button {{
         background-color: var(--bg-card) !important;
         color: var(--text-primary) !important;
@@ -160,76 +139,28 @@ custom_css = f"""
         border-color: var(--accent-light) !important;
         color: {("#1a120d" if "다크" in selected_theme or "네온" in selected_theme else "#ffffff")} !important;
     }}
-    .stTextInput > div > div > input {{
-        background-color: var(--bg-elevated) !important;
-        color: var(--text-primary) !important;
-        border-radius: 12px !important;
-        border: 1px solid var(--border-soft) !important;
-    }}
-    .stTabs [data-baseweb="tab-list"] {{
-        gap: 8px;
-        background-color: var(--bg-elevated);
-        padding: 6px;
-        border-radius: 16px;
-    }}
-    .stTabs [data-baseweb="tab"] {{
-        height: 40px;
-        border-radius: 12px;
-        color: var(--text-secondary);
-        font-weight: 600;
-        border: none !important;
-    }}
-    .stTabs [aria-selected="true"] {{
-        background-color: var(--accent) !important;
-        color: {("#1a120d" if "다크" in selected_theme or "네온" in selected_theme else "#ffffff")} !important;
-    }}
-    [data-testid="stMetricValue"] {{
-        color: var(--accent) !important;
-    }}
-    .stAlert {{
-        border-radius: 16px !important;
-        background-color: var(--bg-card) !important;
-        border: 1px solid var(--border-soft) !important;
-    }}
 
-    /* 커피잔 + 증기 시그니처 일러스트 */
+    /* 커피 시그니처 카드 */
     .cup-card {{
         border-radius: var(--card-radius);
-        padding: 26px 20px 20px;
-        margin: 20px auto;
+        padding: 24px 20px 18px;
+        margin: 15px auto;
         max-width: 300px;
         text-align: center;
-        transition: all 0.4s ease;
         background: {t['bg-card']};
         box-shadow: {t['shadow']};
     }}
     .cup-illustration {{
-        width: 130px;
+        width: 120px;
         height: auto;
         display: block;
         margin: 0 auto;
-        filter: drop-shadow({t['glow-effect'] if t['glow-effect'] != 'none' else '0px 0px 0px transparent'});
-    }}
-    .steam {{
-        transform-origin: center bottom;
-        animation: steamRise 3s ease-in-out infinite;
-    }}
-    .steam:nth-child(2) {{ animation-delay: 0.4s; }}
-    .steam:nth-child(3) {{ animation-delay: 0.8s; }}
-    @keyframes steamRise {{
-        0%   {{ transform: translateY(0) scaleY(1); }}
-        50%  {{ transform: translateY(-6px) scaleY(1.08); }}
-        100% {{ transform: translateY(0) scaleY(1); }}
-    }}
-    @media (prefers-reduced-motion: reduce) {{
-        .steam {{ animation: none; }}
     }}
     .cup-title {{
         font-family: 'Gaegu', cursive;
-        font-size: 32px;
+        font-size: 30px;
         font-weight: 700;
         color: var(--text-primary);
-        letter-spacing: -0.5px;
         margin-top: 4px;
     }}
     .cup-hours {{
@@ -245,251 +176,291 @@ custom_css = f"""
         border-radius: 12px;
         border: 1px solid;
     }}
+
+    /* 📱 퀵메뉴 앱 그리드 아이콘 버튼 스타일 */
+    .quick-btn-box {{
+        position: relative;
+        background: var(--bg-card);
+        border: 1px solid var(--border-soft);
+        border-radius: 22px;
+        aspect-ratio: 1 / 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+        transition: transform 0.15s ease;
+    }}
+    .quick-btn-box:active {{
+        transform: scale(0.95);
+    }}
+    .quick-badge {{
+        position: absolute;
+        top: -6px;
+        right: -4px;
+        font-size: 9px;
+        font-weight: 800;
+        color: #ffffff;
+        padding: 2px 7px;
+        border-radius: 10px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }}
+    .quick-icon {{
+        font-size: 32px;
+        line-height: 1;
+        margin-bottom: 4px;
+    }}
+    .quick-label {{
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-primary);
+        text-align: center;
+        margin-top: 6px;
+        white-space: nowrap;
+    }}
+
+    /* 배민 스타일 가로 스크롤 태그 */
+    .filter-scroll-wrapper {{
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding-bottom: 10px;
+        margin-bottom: 15px;
+        -webkit-overflow-scrolling: touch;
+    }}
+    .filter-scroll-wrapper::-webkit-scrollbar {{
+        display: none;
+    }}
+
+    /* 구내식당 식판 카드 */
+    .diet-tray {{
+        background: var(--bg-card);
+        border: 1.5px solid var(--border-soft);
+        border-radius: 20px;
+        padding: 16px;
+        box-shadow: 0 6px 18px rgba(0,0,0,0.05);
+    }}
+    .diet-grid {{
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-top: 12px;
+    }}
+    .diet-cell {{
+        background: var(--bg-elevated);
+        border-radius: 12px;
+        padding: 10px;
+        text-align: center;
+        font-size: 13px;
+        border: 1px solid var(--border-soft);
+    }}
+    .diet-main {{
+        grid-column: span 2;
+        background: rgba(193, 122, 61, 0.12);
+        border: 1px solid var(--accent);
+        font-weight: 700;
+        color: var(--accent);
+    }}
 </style>
 """
 st.markdown(custom_css, unsafe_allow_html=True)
 
-# -------------------------------------------------------------------
-# 안전한 형변환 헬퍼 함수
-# -------------------------------------------------------------------
 def safe_int(val, default=0):
     try:
-        if val is None:
-            return default
-        return int(float(str(val).strip()))
+        return int(float(str(val).strip())) if val is not None else default
     except (ValueError, TypeError):
         return default
 
 # -------------------------------------------------------------------
-# 3. 텔레그램 알람 전송 함수
+# 3. 구글 시트 연동 & 기본 상태 계산
 # -------------------------------------------------------------------
-def send_telegram_alert(message):
-    try:
-        if "telegram" in st.secrets:
-            bot_token = st.secrets["telegram"].get("bot_token", "여기에_봇토큰_입력")
-            chat_id = st.secrets["telegram"].get("chat_id", "여기에_채널아이디_입력")
-        else:
-            bot_token = "여기에_봇토큰_입력"
-            chat_id = "여기에_채널아이디_입력"
-
-        url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
-        payload = {"chat_id": chat_id, "text": message, "parse_mode": "Markdown"}
-        response = requests.post(url, json=payload, timeout=5)
-
-        if response.status_code == 200:
-            st.toast("📢 텔레그램 채널로 알람이 전송되었습니다!")
-        else:
-            st.warning(f"텔레그램 전송 실패: {response.text}")
-    except Exception as e:
-        st.error(f"텔레그램 연동 오류: {e}")
-
-
-# -------------------------------------------------------------------
-# 4. 데이터 및 구글 시트 연동 (Caching)
-# -------------------------------------------------------------------
-# 표준 라이브러리를 사용하여 KST 시간 구하기 (pytz 종속성 제거로 오류 방지)
 KST = timezone(timedelta(hours=9))
 now_kst = datetime.now(KST)
-current_hour = now_kst.hour
-current_weekday = now_kst.weekday()
 
-is_weekday = current_weekday < 5
-is_opening_hours = 10 <= current_hour < 16
-
-SCOPES = [
-    "https://www.googleapis.com/auth/spreadsheets",
-    "https://www.googleapis.com/auth/drive",
-]
-
+SCOPES = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
 
 @st.cache_resource
 def get_gspread_client():
     try:
         if "gcp_service_account" in st.secrets:
             secret_data = st.secrets["gcp_service_account"]
-            creds_dict = (
-                json.loads(secret_data)
-                if isinstance(secret_data, str)
-                else dict(secret_data)
-            )
+            creds_dict = json.loads(secret_data) if isinstance(secret_data, str) else dict(secret_data)
             return gspread.service_account_from_dict(creds_dict, scopes=SCOPES)
-        else:
-            return gspread.service_account(
-                filename="service_account.json", scopes=SCOPES
-            )
-    except Exception as e:
-        st.error(f"🔑 구글 API 인증 오류: {e}")
+        return gspread.service_account(filename="service_account.json", scopes=SCOPES)
+    except Exception:
         return None
 
-
 gc = get_gspread_client()
-
 
 @st.cache_resource
 def get_sheets(_gc):
     if not _gc:
-        return None, None, None, None
+        return None
     try:
         doc = _gc.open("kiost_sodam")
-        sheet_stock = doc.worksheet("재고")
-        sheet_vote = doc.worksheet("투표")
-        sheet_guest = doc.worksheet("방명록")
-        return doc, sheet_stock, sheet_vote, sheet_guest
-    except Exception as e:
-        st.error(f"📄 구글 시트 로드 실패: {e}")
-        return None, None, None, None
+        return doc.worksheet("재고")
+    except Exception:
+        return None
 
+sheet_stock = get_sheets(gc)
 
-doc, sheet_stock, sheet_vote, sheet_guest = get_sheets(gc)
-
-
-# 캐싱 함수 내부에서 st.session_state를 직접 수정하는 오동작 방지 및 외부 예외 안전 처리 적용
 @st.cache_data(ttl=10)
 def fetch_stock_data():
     if not sheet_stock:
-        raise ConnectionError("구글 시트에 연결되지 않았습니다.")
-    try:
-        return sheet_stock.acell("B1").value
-    except Exception as e:
-        raise RuntimeError(f"재고 셀(B1) 파싱 실패: {e}")
+        return 0
+    return sheet_stock.acell("B1").value
 
-
-@st.cache_data(ttl=10)
-def fetch_vote_data():
-    if not sheet_vote:
-        raise ConnectionError("구글 시트에 연결되지 않았습니다.")
-    try:
-        return sheet_vote.get_all_values()
-    except Exception as e:
-        raise RuntimeError(f"투표 데이터 로드 실패: {e}")
-
-
-@st.cache_data(ttl=10)
-def fetch_guest_data():
-    if not sheet_guest:
-        raise ConnectionError("구글 시트에 연결되지 않았습니다.")
-    try:
-        return sheet_guest.get_all_values()
-    except Exception as e:
-        raise RuntimeError(f"방명록 데이터 로드 실패: {e}")
-
-
-# 메인 흐름에서 캐싱 함수의 결과를 안전하게 처리
-stock_fetch_error = None
 try:
-    raw_stock = fetch_stock_data()
-    current_stock = safe_int(raw_stock, 0)
-except Exception as e:
+    current_stock = safe_int(fetch_stock_data(), 0)
+except Exception:
     current_stock = 0
-    stock_fetch_error = str(e)
 
-# -------------------------------------------------------------------
-# 5. 상태별 테마 계산
-# -------------------------------------------------------------------
-
-# 신호등 색상(초록/노랑/빨강)은 상태를 직관적으로 전달하는 기능색이라 그대로 유지하고,
-# 카드 배경은 보라색 계열 대신 커피 테마에 맞는 다크 브라운 톤으로 옮긴다.
 if current_stock > 30:
-    theme_card_bg = "radial-gradient(circle at 50% 15%, rgba(34, 197, 94, 0.10) 0%, var(--bg-card) 70%)"
-    theme_shadow = "0 10px 34px rgba(34, 197, 94, 0.12)"
-    theme_border = "rgba(34, 197, 94, 0.35)"
     status_label = "🟢 이용가능"
-    badge_bg = "rgba(34, 197, 94, 0.15)"
-    badge_color = "#22c55e"
-    cup_fill_y = 55       # 커피가 잔 위쪽까지 가득
-    steam_visible = True
-    steam_opacity = 0.85
+    badge_bg, badge_color = "rgba(34, 197, 94, 0.15)", "#22c55e"
+    cup_fill_y, theme_shadow, theme_border = 55, "0 10px 34px rgba(34, 197, 94, 0.12)", "rgba(34, 197, 94, 0.35)"
 elif current_stock > 0:
-    theme_card_bg = "radial-gradient(circle at 50% 15%, rgba(234, 179, 8, 0.10) 0%, var(--bg-card) 70%)"
-    theme_shadow = "0 10px 34px rgba(234, 179, 8, 0.12)"
-    theme_border = "rgba(234, 179, 8, 0.35)"
     status_label = "🟡 소진임박"
-    badge_bg = "rgba(234, 179, 8, 0.15)"
-    badge_color = "#eab308"
-    cup_fill_y = 100      # 절반 정도 남음
-    steam_visible = True
-    steam_opacity = 0.4
+    badge_bg, badge_color = "rgba(234, 179, 8, 0.15)", "#eab308"
+    cup_fill_y, theme_shadow, theme_border = 100, "0 10px 34px rgba(234, 179, 8, 0.12)", "rgba(234, 179, 8, 0.35)"
 else:
-    theme_card_bg = "radial-gradient(circle at 50% 15%, rgba(239, 68, 68, 0.10) 0%, var(--bg-card) 70%)"
-    theme_shadow = "0 10px 34px rgba(239, 68, 68, 0.12)"
-    theme_border = "rgba(239, 68, 68, 0.35)"
     status_label = "🔴 카페마감"
-    badge_bg = "rgba(239, 68, 68, 0.15)"
-    badge_color = "#ef4444"
-    cup_fill_y = 140      # 커피 없음(빈 잔)
-    steam_visible = False
-    steam_opacity = 0
+    badge_bg, badge_color = "rgba(239, 68, 68, 0.15)", "#ef4444"
+    cup_fill_y, theme_shadow, theme_border = 140, "0 10px 34px rgba(239, 68, 68, 0.12)", "rgba(239, 68, 68, 0.35)"
 
-# 커피 채움 도형과 증기(steam) SVG 조각을 미리 조립
-# 주의: 여기서 만드는 조각들은 반드시 개행(\n)이 없는 한 줄 문자열이어야 한다.
-# st.markdown()에 삽입될 때 공백만 있는 줄이 생기면, 마크다운 파서가 그 지점부터
-# 이후 내용을 HTML이 아닌 "들여쓰기 코드블록"으로 오인해서 태그가 그대로 노출된다.
+# 커피잔 SVG 조립
 _coffee_height = 140 - cup_fill_y
-coffee_fill_svg = (
-    f'<rect x="20" y="{cup_fill_y}" width="120" height="{_coffee_height}" '
-    f'fill="var(--accent)" clip-path="url(#mugClip)" />'
-    if _coffee_height > 0
-    else ""
-)
-
-if steam_visible:
-    _steam_path = (
-        'stroke="var(--accent-light)" stroke-width="4" stroke-linecap="round" fill="none" />'
-    )
-    steam_svg = (
-        f'<path class="steam" style="opacity:{steam_opacity};" d="M55,35 C48,25 62,15 55,5" {_steam_path}'
-        f'<path class="steam" style="opacity:{steam_opacity};" d="M80,35 C73,25 87,15 80,3" {_steam_path}'
-        f'<path class="steam" style="opacity:{steam_opacity};" d="M105,35 C98,25 112,15 105,5" {_steam_path}'
-    )
-else:
-    steam_svg = ""
-
-# 잔+손잡이 외곽선과 위 조각들을 하나의 한 줄짜리 SVG 마크업으로 합친다. (테마별 --mug-stroke CSS 변수 반영)
+coffee_fill_svg = f'<rect x="20" y="{cup_fill_y}" width="120" height="{_coffee_height}" fill="var(--accent)" clip-path="url(#mugClip)" />' if _coffee_height > 0 else ""
 mug_svg = (
     '<svg class="cup-illustration" viewBox="0 0 160 170" xmlns="http://www.w3.org/2000/svg">'
-    '<defs><clipPath id="mugClip">'
-    '<path d="M25,40 L135,40 L127,132 Q127,140 119,140 L41,140 Q33,140 33,132 Z" />'
-    '</clipPath></defs>'
-    + steam_svg
+    '<defs><clipPath id="mugClip"><path d="M25,40 L135,40 L127,132 Q127,140 119,140 L41,140 Q33,140 33,132 Z" /></clipPath></defs>'
     + coffee_fill_svg
-    + '<path d="M25,40 L135,40 L127,132 Q127,140 119,140 L41,140 Q33,140 33,132 Z" '
-    'fill="none" stroke="var(--mug-stroke)" stroke-width="4" stroke-linejoin="round" />'
-    '<path d="M135,55 C165,55 165,105 135,105" '
-    'fill="none" stroke="var(--mug-stroke)" stroke-width="6" stroke-linecap="round" />'
+    + '<path d="M25,40 L135,40 L127,132 Q127,140 119,140 L41,140 Q33,140 33,132 Z" fill="none" stroke="var(--mug-stroke)" stroke-width="4" stroke-linejoin="round" />'
+    '<path d="M135,55 C165,55 165,105 135,105" fill="none" stroke="var(--mug-stroke)" stroke-width="6" stroke-linecap="round" />'
     '</svg>'
 )
 
 # -------------------------------------------------------------------
-# 6. 상단 UI 및 커피잔 시그니처 카드 (텔레그램 링크 버튼 반영)
+# 4. 기능 대화상자 (Dialog Modal) 정의
 # -------------------------------------------------------------------
 
-# 👈 본인의 텔레그램 채널 공개 링크 주소로 변경하세요
-telegram_channel_url = "https://t.me/+n5J-xg8BI4tkYmE1"
+# 1번: 금요일 퇴근시간 계산기
+@st.dialog("⏰ 주 40시간 칼퇴 계산기")
+def show_worktime_modal():
+    st.write("목표 40시간 채우고 금요일에 바로 퇴근하세요!")
+    col1, col2 = st.columns(2)
+    with col1:
+        prev_hours = st.number_input("목요일까지 누적(시간)", min_value=0, max_value=40, value=32, step=1)
+    with col2:
+        prev_minutes = st.number_input("누적(분)", min_value=0, max_value=59, value=0, step=5)
+
+    fri_start = st.time_input("금요일 출근 시간", value=time(9, 0))
+    deduct_lunch = st.checkbox("점심시간 1시간 제외", value=True)
+
+    if st.button("퇴근 시간 계산하기", use_container_width=True):
+        done_minutes = (prev_hours * 60) + prev_minutes
+        remain_work_minutes = max(0, (40 * 60) - done_minutes)
+
+        fri_start_dt = datetime.combine(datetime.today(), fri_start)
+        lunch_offset = 60 if deduct_lunch else 0
+        total_offset = remain_work_minutes + lunch_offset
+        leave_dt = fri_start_dt + timedelta(minutes=total_offset)
+
+        st.divider()
+        if remain_work_minutes == 0:
+            st.success("🎉 이미 주 40시간을 달성하셨습니다! 바로 퇴근 가능합니다.")
+        else:
+            remain_h, remain_m = divmod(remain_work_minutes, 60)
+            st.info(f"오늘 채워야 할 순 근무시간: **{remain_h}시간 {remain_m}분**")
+            st.markdown(
+                f"<div style='text-align:center; padding:15px; background:rgba(34,197,94,0.12); border-radius:14px; border:1px solid #22c55e;'>"
+                f"<span style='font-size:14px;'>금요일 퇴근 가능 시간</span><br>"
+                f"<b style='font-size:26px; color:#22c55e;'>{leave_dt.strftime('%H:%M')}</b>"
+                f"</div>",
+                unsafe_allow_html=True
+            )
+
+# 2번: 주변 점심 맛집 리스트 (배민 스타일 필터)
+@st.dialog("🍽️ 회사 근처 점심 맛집")
+def show_restaurants_modal():
+    restaurants = [
+        {"name": "소담 한식뷔페", "category": "한식", "rating": "⭐ 4.8", "dist": "도보 3분", "menu": "제육볶음, 된장찌개"},
+        {"name": "동화루 중화요리", "category": "중식", "rating": "⭐ 4.5", "dist": "도보 5분", "menu": "짬뽕, 간짜장, 탕수육"},
+        {"name": "스시도담", "category": "일식", "rating": "⭐ 4.7", "dist": "도보 7분", "menu": "모듬초밥, 히레카츠"},
+        {"name": "우리동네 떡볶이", "category": "분식", "rating": "⭐ 4.6", "dist": "도보 4분", "menu": "가래떡떡볶이, 모둠튀김"},
+        {"name": "그린샐러드랩", "category": "샐러드", "rating": "⭐ 4.9", "dist": "도보 2분", "menu": "우삼겹 보울, 연어 샐러드"},
+    ]
+
+    categories = ["전체", "한식", "중식", "일식", "분식", "샐러드"]
+    selected_cat = st.radio("카테고리 선택", categories, horizontal=True, label_visibility="collapsed")
+
+    st.write("")
+    filtered = [r for r in restaurants if selected_cat == "전체" or r["category"] == selected_cat]
+
+    for item in filtered:
+        st.markdown(
+            f"""
+            <div style="background:var(--bg-elevated); padding:12px 14px; border-radius:14px; border:1px solid var(--border-soft); margin-bottom:8px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <b style="font-size:15px;">{item['name']}</b>
+                    <span style="font-size:12px; color:var(--accent); font-weight:600;">{item['rating']}</span>
+                </div>
+                <div style="font-size:12px; color:var(--text-secondary); margin-top:2px;">
+                    {item['dist']} · 대표메뉴: {item['menu']}
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+# 3번: 구내식당 식판 카드
+@st.dialog("🍱 오늘 구내식당 점심 메뉴")
+def show_cafeteria_modal():
+    today_str = now_kst.strftime("%m월 %d일 (%a)")
+    st.caption(f"📅 {today_str} 중식 (11:30 ~ 13:00)")
+
+    st.markdown(
+        """
+        <div class="diet-tray">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-weight:700; font-size:15px;">A코너: 든든한 정식</span>
+                <span style="font-size:12px; background:rgba(34,197,94,0.15); color:#22c55e; padding:2px 8px; border-radius:8px; font-weight:bold;">운영중</span>
+            </div>
+            <div class="diet-grid">
+                <div class="diet-cell diet-main">🥩 매콤 돼지갈비찜</div>
+                <div class="diet-cell">🍚 흑미밥</div>
+                <div class="diet-cell">🍲 소고기 미역국</div>
+                <div class="diet-cell">🥗 해물잡채</div>
+                <div class="diet-cell">🥬 겉절이 김치</div>
+            </div>
+            <div style="margin-top:12px; text-align:right; font-size:11px; color:var(--text-secondary);">
+                열량: 820 kcal · 샐러드바 자율이용
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+    st.write("")
+    with st.expander("🥗 B코너: 라이트/간편식 보기"):
+        st.write("• 닭가슴살 아보카도 샐러드팩")
+        st.write("• 착즙 감귤 주스")
+        st.write("• 삶은 달걀 & 단호박")
+
+# -------------------------------------------------------------------
+# 5. 상단 헤더 & 커피잔 카드
+# -------------------------------------------------------------------
 st.markdown(
     f"""
-<div class="top-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+<div class="top-header" style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:15px;">
     <div>
-        <div class="header-title" style="margin: 0;">Good day ☕</div>
-        <div class="header-sub" style="margin-top: 2px;">Sodam-teo Cafe</div>
+        <div class="header-title" style="margin:0;">Good day ☕</div>
+        <div class="header-sub" style="margin-top:2px;">Sodam-teo Cafe</div>
     </div>
-    <a href="{telegram_channel_url}" target="_blank" style="text-decoration: none; display: flex; flex-direction: column; align-items: center;">
-        <div style="
-            width: 42px; 
-            height: 42px; 
-            border-radius: 50%; 
-            background: rgba(42, 171, 238, 0.15); 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            border: 1px solid rgba(42, 171, 238, 0.4); 
-            font-size: 20px;
-            box-shadow: 0 4px 12px rgba(42, 171, 238, 0.2);
-        ">
+    <a href="https://t.me/+n5J-xg8BI4tkYmE1" target="_blank" style="text-decoration:none; display:flex; flex-direction:column; align-items:center;">
+        <div style="width:38px; height:38px; border-radius:50%; background:rgba(42, 171, 238, 0.15); display:flex; align-items:center; justify-content:center; border:1px solid rgba(42, 171, 238, 0.4); font-size:18px;">
             ✈️
         </div>
-        <div style="font-size: 11px; color: #2AAAEE; margin-top: 4px; font-weight: 600; letter-spacing: -0.3px;">
-            텔레그램 알람받기
-        </div>
+        <div style="font-size:10px; color:#2AAAEE; margin-top:3px; font-weight:600;">알람받기</div>
     </a>
 </div>
 """,
@@ -497,249 +468,99 @@ st.markdown(
 )
 
 st.markdown(
-    f'<div class="cup-card" style="background: {theme_card_bg}; box-shadow: {theme_shadow}; '
-    f'border: 1px solid {theme_border};">'
+    f'<div class="cup-card" style="box-shadow: {theme_shadow}; border: 1px solid {theme_border};">'
     f'{mug_svg}'
     f'<div class="cup-title">소담터</div>'
     f'<div class="cup-hours">운영시간 10:00 - 16:00</div>'
-    f'<div class="cup-badge" style="color: {badge_color}; background: {badge_bg}; '
-    f'border-color: {badge_color}40;">{status_label}</div>'
+    f'<div class="cup-badge" style="color: {badge_color}; background: {badge_bg}; border-color: {badge_color}40;">{status_label}</div>'
     f'</div>',
     unsafe_allow_html=True,
 )
 
-st.markdown("<br>", unsafe_allow_html=True)
+# -------------------------------------------------------------------
+# 6. 하단 이미지 스타일 퀵메뉴 (스퀏클 디자인 그리드)
+# -------------------------------------------------------------------
+st.markdown("<div style='margin-top: 25px; margin-bottom: 12px; font-size: 14px; font-weight: 700; color: var(--text-secondary);'>사내 편의 서비스</div>", unsafe_allow_html=True)
+
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    st.markdown(
+        """
+        <div class="quick-btn-box">
+            <div class="quick-badge" style="background: #ef4444;">칼퇴</div>
+            <div class="quick-icon">⏰</div>
+        </div>
+        <div class="quick-label">근무 계산기</div>
+        """,
+        unsafe_allow_html=True
+    )
+    if st.button("열기", key="btn_work", use_container_width=True):
+        show_worktime_modal()
+
+with col2:
+    st.markdown(
+        """
+        <div class="quick-btn-box">
+            <div class="quick-badge" style="background: #22c55e;">PICK</div>
+            <div class="quick-icon">🍕</div>
+        </div>
+        <div class="quick-label">근처 맛집</div>
+        """,
+        unsafe_allow_html=True
+    )
+    if st.button("보기", key="btn_res", use_container_width=True):
+        show_restaurants_modal()
+
+with col3:
+    st.markdown(
+        """
+        <div class="quick-btn-box">
+            <div class="quick-badge" style="background: #0284c7;">오늘</div>
+            <div class="quick-icon">🍱</div>
+        </div>
+        <div class="quick-label">구내식당</div>
+        """,
+        unsafe_allow_html=True
+    )
+    if st.button("조회", key="btn_diet", use_container_width=True):
+        show_cafeteria_modal()
 
 # -------------------------------------------------------------------
-# 7. 탭(Tab) 메뉴
+# 7. 사이드바 (테마 & 관리자)
 # -------------------------------------------------------------------
-
-tab1, tab2, tab3 = st.tabs(["☕ 카페 현황", "🏆 인기 투표", "💬 끄적끄적 방명록"])
-
-with tab1:
-    st.markdown("<br>", unsafe_allow_html=True)
-    if stock_fetch_error:
-        st.warning(
-            f"⚠️ 재고 데이터를 불러오지 못해 임시로 마감 상태로 표시 중입니다. "
-            f"(오류: {stock_fetch_error})"
-        )
-    if not is_weekday or not is_opening_hours:
-        st.info("💡 현재는 **운영 시간(평일 10:00 ~ 16:00) 외** 시간입니다.")
-
-    if current_stock > 30:
-        st.success(
-            "### 🟢 여유 있어요!\n맛있는 커피가 넉넉하게 준비되어 있습니다. 천천히 오세요~ ☕"
-        )
-    elif current_stock > 0:
-        st.warning(
-            "### 🟡 마감 임박!\n오늘 준비된 커피가 얼마 남지 않았어요. 조금만 서둘러 주세요! 🏃‍♂️"
-        )
-    else:
-        st.error(
-            "### 🔴 금일 마감\n오늘 준비된 커피가 모두 소진되었습니다. 내일 더 맛있는 커피로 만나요! 🌙"
-        )
-
-    st.markdown("<br>", unsafe_allow_html=True)
-    try:
-        weather_req = requests.get(
-            "https://wttr.in/Busan?format=%c+%t&m", timeout=3
-        )
-        if weather_req.status_code == 200:
-            st.info(
-                f"🌤️ **오늘의 부산 날씨:** {weather_req.text}  |  상쾌한 음료와 함께 기분 좋은 하루 보내세요!"
-            )
-    except:
-        pass
-
-with tab2:
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown("### 🏆 가장 사랑받는 메뉴 TOP 3")
-    
-    vote_fetch_error = None
-    vote_raw_data = []
-    try:
-        vote_raw_data = fetch_vote_data()
-    except Exception as e:
-        vote_fetch_error = str(e)
-        
-    if vote_fetch_error:
-        st.warning(
-            f"⚠️ 투표 데이터를 불러오지 못했습니다. (오류: {vote_fetch_error})"
-        )
-        
-    if len(vote_raw_data) > 1:
-        try:
-            # 정렬 전에 시트의 실제 행 번호(2행부터 시작)를 각 항목에 붙여둔다.
-            # 데이터 구조 불일치 대비 안전한 unpacking과 데이터 정제 과정 추가
-            vote_data = []
-            for sheet_row_num, row in enumerate(vote_raw_data[1:], start=2):
-                if len(row) >= 2:
-                    vote_data.append((row[0], safe_int(row[1], 0), sheet_row_num))
-                elif len(row) == 1:
-                    vote_data.append((row[0], 0, sheet_row_num))
-                    
-            vote_data.sort(key=lambda x: x[1], reverse=True)
-            top3 = vote_data[:3]
-            col1, col2, col3 = st.columns(3)
-            if len(top3) >= 1:
-                col1.metric(
-                    label="🥇 1위", value=top3[0][0], delta=f"{top3[0][1]}표"
-                )
-            if len(top3) >= 2:
-                col2.metric(
-                    label="🥈 2위", value=top3[1][0], delta=f"{top3[1][1]}표"
-                )
-            if len(top3) >= 3:
-                col3.metric(
-                    label="🥉 3위", value=top3[2][0], delta=f"{top3[2][1]}표"
-                )
-
-            st.markdown("<br>", unsafe_allow_html=True)
-            with st.expander("👉 나도 최애 메뉴에 투표하기"):
-                st.caption("메뉴를 누르면 즉시 1표가 올라갑니다!")
-                vote_cols = st.columns(4)
-                for i, (menu_name, current_votes, sheet_row_num) in enumerate(vote_data):
-                    if vote_cols[i % 4].button(menu_name, key=f"vote_{i}"):
-                        if sheet_vote:
-                            sheet_vote.update_cell(sheet_row_num, 2, current_votes + 1)
-                            st.cache_data.clear()
-                            st.toast(f"{menu_name}에 투표하셨습니다! 🎉")
-                            st.rerun()
-        except Exception as e:
-            st.warning(f"투표 데이터 처리 오류: {e}")
-
-with tab3:
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown("### 💬 끄적끄적 한줄 게시판")
-    
-    guest_fetch_error = None
-    guest_raw_data = []
-    try:
-        guest_raw_data = fetch_guest_data()
-    except Exception as e:
-        guest_fetch_error = str(e)
-        
-    if guest_fetch_error:
-        st.warning(
-            f"⚠️ 방명록 데이터를 불러오지 못했습니다. (오류: {guest_fetch_error})"
-        )
-        
-    if sheet_guest:
-        try:
-            with st.form("guestbook_form", clear_on_submit=True):
-                new_comment = st.text_input(
-                    "메뉴 건의나 응원의 한마디를 남겨주세요!",
-                    placeholder="예: 시원한 콜드브루도 들어오면 좋겠어요!",
-                )
-                submitted = st.form_submit_button("등록하기")
-                if submitted and new_comment:
-                    kst = datetime.now(KST).strftime(
-                        "%m-%d %H:%M"
-                    )
-                    sheet_guest.append_row([kst, new_comment])
-                    st.cache_data.clear()
-                    st.success("소중한 의견이 등록되었습니다!")
-                    st.rerun()
-
-            if len(guest_raw_data) > 1:
-                data_rows = guest_raw_data[1:]
-                st.markdown("##### 💌 최근 남겨진 이야기")
-                for row in reversed(data_rows[-5:]):
-                    if len(row) >= 2:
-                        st.info(f"**{row[0]}** | {row[1]}")
-                    elif len(row) == 1:
-                        st.info(f"{row[0]}")
-        except Exception as e:
-            st.warning(f"방명록 처리 오류: {e}")
-
-# -------------------------------------------------------------------
-# 8. 사이드바 메뉴 (테마 스위처 + 관리자 메뉴 통합)
-# -------------------------------------------------------------------
-st.sidebar.title("🎨 디자인 테마 선택")
-
-# 사이드바에서 실시간으로 분위기를 바꿀 수 있는 테마 선택 상자 제공
+st.sidebar.title("🎨 테마 설정")
 st.sidebar.selectbox(
-    "원하는 분위기를 선택해보세요!",
-    [
-        "☕ 오리지널 커피 다크",
-        "🌿 성수동 세이지 그린",
-        "☀️ 포근한 카라멜 우드",
-        "🎆 을지로 힙스토 네온",
-    ],
-    key="app_theme"  # st.session_state["app_theme"] 와 자동 동기화됨
+    "디자인 모드",
+    list(themes_config.keys()),
+    key="app_theme"
 )
 
 st.sidebar.divider()
 st.sidebar.title("🔐 관리자 메뉴")
-
 if "is_admin_logged_in" not in st.session_state:
     st.session_state.is_admin_logged_in = False
 
 if not st.session_state.is_admin_logged_in:
-    admin_pw = st.sidebar.text_input(
-        "비밀번호를 입력하세요", type="password", key="admin_pw_input"
-    )
-    if st.sidebar.button("🔓 로그인", use_container_width=True, key="login_btn"):
-        admin_secrets = st.secrets.get("admin")
-        correct_pw = admin_secrets.get("password") if admin_secrets else None
-        if not correct_pw:
-            st.sidebar.error("⚠️ secrets.toml에 관리자 비밀번호가 설정되지 않았습니다.")
-        elif admin_pw == correct_pw:
+    admin_pw = st.sidebar.text_input("비밀번호", type="password", key="admin_pw")
+    if st.sidebar.button("로그인", use_container_width=True):
+        correct_pw = st.secrets.get("admin", {}).get("password", "1234")
+        if admin_pw == correct_pw:
             st.session_state.is_admin_logged_in = True
-            st.sidebar.success("인증 완료!")
             st.rerun()
         else:
-            st.sidebar.error("비밀번호가 올바르지 않습니다.")
-
+            st.sidebar.error("비밀번호 오류")
 else:
-    st.sidebar.success("인증 완료 상태입니다.")
-
-    if current_stock > 30:
-        current_status_text = "🟢 이용가능"
-    elif current_stock > 0:
-        current_status_text = "🟡 소진임박"
-    else:
-        current_status_text = "🔴 카페마감"
-
-    st.sidebar.info(f"현재 반영된 상태: **{current_status_text}**")
-    st.sidebar.divider()
-
-    st.sidebar.markdown("### 🛠️ 상태 변경 및 알람 발송")
-
-    # 🟢 1단계 변경
-    if st.sidebar.button("🟢 1단계: 이용가능", use_container_width=True):
-        if sheet_stock:
-            sheet_stock.update_cell(1, 2, 200)
-            st.cache_data.clear()
-            # 💡 텔레그램 알람 전송
-            # send_telegram_alert(
-            #     "☕ **[소담터 카페]**\n맛있는 커피가 넉넉하게 준비되었습니다. 커피 한 잔 하러 오세요! 🟢"
-            # )
-            st.rerun()
-
-    # 🟡 2단계 변경
-    if st.sidebar.button("🟡 2단계: 소진임박", use_container_width=True):
-        if sheet_stock:
-            sheet_stock.update_cell(1, 2, 15)
-            st.cache_data.clear()
-            # 💡 텔레그램 알람 전송
-            send_telegram_alert(
-                 "🏃‍♂️ **[소담터 카페]**\n오늘 준비된 커피가 얼마 남지 않았습니다! 조금만 서둘러 주세요! 🟡"
-            )
-            st.rerun()
-
-    # 🔴 3단계 변경
-    if st.sidebar.button("🔴 3단계: 카페마감", use_container_width=True):
-        if sheet_stock:
-            sheet_stock.update_cell(1, 2, 0)
-            st.cache_data.clear()
-            # 💡 텔레그램 알람 전송
-            send_telegram_alert(
-                "🌙 **[소담터 카페]**\n오늘 준비된 재고가 모두 소진되어 영업을 마감합니다. 내일 만나요! 🔴"
-            )
-            st.rerun()
-
-    st.sidebar.divider()
-    if st.sidebar.button("🔒 로그아웃", use_container_width=True):
+    st.sidebar.success("관리자 로그인 중")
+    if st.sidebar.button("🟢 이용가능 (200잔)", use_container_width=True):
+        if sheet_stock: sheet_stock.update_cell(1, 2, 200)
+        st.cache_data.clear(); st.rerun()
+    if st.sidebar.button("🟡 소진임박 (15잔)", use_container_width=True):
+        if sheet_stock: sheet_stock.update_cell(1, 2, 15)
+        st.cache_data.clear(); st.rerun()
+    if st.sidebar.button("🔴 마감 (0잔)", use_container_width=True):
+        if sheet_stock: sheet_stock.update_cell(1, 2, 0)
+        st.cache_data.clear(); st.rerun()
+    if st.sidebar.button("로그아웃", use_container_width=True):
         st.session_state.is_admin_logged_in = False
         st.rerun()
