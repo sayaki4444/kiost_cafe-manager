@@ -26,7 +26,7 @@ if "active_modal" not in st.session_state:
 is_dark = (st.session_state.theme_mode == "🌙 다크")
 
 # -------------------------------------------------------------------
-# 2. 테마 팔레트 정의
+# 2. 고대비 테마 팔레트 (선명한 명도 대비)
 # -------------------------------------------------------------------
 if is_dark:
     c = {
@@ -47,38 +47,41 @@ if is_dark:
     }
 else:
     c = {
-        "bg_app": "#EDF2F7",
+        "bg_app": "#F1F5F9",
         "card_bg": "#FFFFFF",
-        "card_sub": "#F1F5F9",
+        "card_sub": "#F8FAFC",
         "border": "#94A3B8",
         "border_bold": "#003876",
-        "text_main": "#090A0C",
-        "text_sub": "#1E293B",
+        "text_main": "#0F172A",
+        "text_sub": "#334155",
         "accent": "#003876",
         "badge_bg": "#DCFCE7",
         "badge_border": "#15803D",
         "badge_text": "#15803D",
-        "shadow": "0 4px 12px rgba(0, 0, 0, 0.08)",
+        "shadow": "0 4px 14px rgba(0, 0, 0, 0.08)",
         "mug_line": "#003876",
         "mug_fill": "#0072CE",
     }
 
 mobile_css = f"""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Gaegu:wght@700&family=Noto+Sans+KR:wght@400;600;700;900&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Gaegu:wght@700&family=Noto+Sans+KR:wght@500;700;900&display=swap');
 
-    html, body, [class*="css"], .stApp {{
+    /* 모바일 기본 폰트 스케일 및 배경 고정 */
+    html, body, .stApp {{
         background-color: {c['bg_app']} !important;
         color: {c['text_main']} !important;
-        font-family: 'Noto Sans KR', sans-serif;
-        overflow-x: hidden !important; /* 가로 스크롤 원천 차단 */
+        font-family: 'Noto Sans KR', sans-serif !important;
+        font-size: 16px !important;
+        -webkit-text-size-adjust: 100% !important;
+        overflow-x: hidden !important;
     }}
     
     .main .block-container {{
         max-width: 430px !important;
         width: 100% !important;
         padding-top: 0.8rem !important;
-        padding-bottom: 2rem !important;
+        padding-bottom: 2.5rem !important;
         padding-left: 14px !important;
         padding-right: 14px !important;
         margin: 0 auto;
@@ -86,72 +89,67 @@ mobile_css = f"""
     }}
     footer {{ visibility: hidden !important; height: 0px !important; }}
 
-    p, span, label, div, h1, h2, h3, h4, h5, h6, caption {{
-        color: {c['text_main']} !important;
-    }}
-
+    /* 라디오 버튼 텍스트 가독성 */
     div[data-testid="stRadio"] label p {{
         color: {c['text_main']} !important;
         font-weight: 800 !important;
-        font-size: 11.5px !important;
+        font-size: 13px !important;
     }}
 
     /* 커피 시그니처 카드 */
     .cup-card {{
         background: {c['card_bg']} !important;
         border: 2px solid {c['border']} !important;
-        border-radius: 20px;
-        padding: 16px 12px 14px;
-        margin: 8px auto;
+        border-radius: 22px;
+        padding: 18px 14px;
+        margin: 10px auto;
         width: 100%;
         box-sizing: border-box;
         text-align: center;
         box-shadow: {c['shadow']};
     }}
     .cup-illustration {{
-        width: 96px;
+        width: 105px;
         height: auto;
         display: block;
         margin: 0 auto;
     }}
     .cup-title {{
         font-family: 'Gaegu', cursive !important;
-        font-size: 26px !important;
+        font-size: 30px !important;
         font-weight: 700 !important;
         color: {c['accent']} !important;
-        margin-top: 2px;
+        margin-top: 4px;
     }}
     .cup-hours {{
-        font-size: 12px !important;
+        font-size: 13px !important;
         font-weight: 700 !important;
         color: {c['text_sub']} !important;
-        margin-bottom: 6px;
+        margin-bottom: 8px;
     }}
     .cup-badge {{
         display: inline-block;
-        font-size: 12px !important;
+        font-size: 13px !important;
         font-weight: 800 !important;
-        padding: 4px 12px;
-        border-radius: 10px;
+        padding: 5px 16px;
+        border-radius: 12px;
         border: 2px solid;
     }}
 
-    /* 📱 모바일 가로 밀림 완벽 해결: 순수 CSS 3열 그리드 강제 */
+    /* 📱 모바일 1행 3열 그리드 강제 (가로 밀림 완전 방지) */
     div[data-testid="stHorizontalBlock"] {{
         display: grid !important;
-        grid-template-columns: 1fr 1fr 1fr !important;
-        gap: 8px !important;
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 10px !important;
         width: 100% !important;
-        min-width: 0 !important;
     }}
     div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {{
         width: 100% !important;
         min-width: 0 !important;
-        flex: unset !important;
         padding: 0 !important;
     }}
 
-    /* 정사각형 버튼 스타일 */
+    /* 📱 정사각형(1:1) 버튼 & 큼직한 텍스트 */
     .square-btn {{
         width: 100% !important;
         aspect-ratio: 1 / 1 !important;
@@ -167,7 +165,7 @@ mobile_css = f"""
         background-color: {c['card_bg']} !important;
         border: 2px solid {c['border']} !important;
         border-radius: 18px !important;
-        padding: 4px !important;
+        padding: 6px !important;
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
@@ -176,13 +174,13 @@ mobile_css = f"""
         transition: transform 0.1s ease !important;
     }}
     .square-btn .stButton > button:active {{
-        transform: scale(0.94);
+        transform: scale(0.95);
     }}
     .square-btn .stButton > button p {{
         color: {c['accent']} !important;
         font-weight: 900 !important;
-        font-size: 12.5px !important;
-        line-height: 1.25 !important;
+        font-size: 14px !important;       /* 글자 크기 시원하게 확대 */
+        line-height: 1.3 !important;
         margin: 0 !important;
         text-align: center !important;
         white-space: pre-line !important;
@@ -192,8 +190,8 @@ mobile_css = f"""
     .popup-box {{
         background: {c['card_bg']} !important;
         border: 2px solid {c['border_bold']} !important;
-        border-radius: 18px;
-        padding: 16px 14px;
+        border-radius: 20px;
+        padding: 18px 14px;
         margin-top: 14px;
         box-shadow: {c['shadow']};
     }}
@@ -202,14 +200,17 @@ mobile_css = f"""
         background-color: {c['card_sub']} !important;
         color: {c['text_main']} !important;
         border: 2px solid {c['border']} !important;
+        font-size: 15px !important;
         font-weight: 700 !important;
     }}
     div[data-testid="stCheckbox"] label span {{
         color: {c['text_main']} !important;
+        font-size: 14px !important;
         font-weight: 700 !important;
     }}
     .stTabs [data-baseweb="tab"] div {{
         color: {c['text_main']} !important;
+        font-size: 14px !important;
         font-weight: 800 !important;
     }}
 </style>
@@ -306,8 +307,8 @@ h_col1, h_col2, h_col3 = st.columns([5.2, 3.8, 1.0])
 with h_col1:
     st.markdown(
         f"""
-        <div style="font-size:10px; font-weight:800; color:{c['accent']} !important; letter-spacing:0.3px;">KIOST 사내 카페</div>
-        <div style="font-family:'Gaegu', cursive; font-size:23px; font-weight:700; color:{c['text_main']} !important; margin-top:-3px;">소담터 알리미 ☕</div>
+        <div style="font-size:11px; font-weight:800; color:{c['accent']}; letter-spacing:0.3px;">KIOST 사내 카페</div>
+        <div style="font-family:'Gaegu', cursive; font-size:25px; font-weight:700; color:{c['text_main']}; margin-top:-3px;">소담터 알리미 ☕</div>
         """,
         unsafe_allow_html=True,
     )
@@ -329,10 +330,10 @@ with h_col3:
     st.markdown(
         f"""
         <a href="https://t.me/+n5J-xg8BI4tkYmE1" target="_blank" style="text-decoration:none; display:flex; flex-direction:column; align-items:center;">
-            <div style="width:32px; height:32px; border-radius:50%; background:{c['card_bg']}; display:flex; align-items:center; justify-content:center; border:1.5px solid {c['border']}; font-size:14px;">
+            <div style="width:34px; height:34px; border-radius:50%; background:{c['card_bg']}; display:flex; align-items:center; justify-content:center; border:1.5px solid {c['border']}; font-size:16px;">
                 ✈️
             </div>
-            <div style="font-size:9px; color:{c['text_sub']} !important; margin-top:1px; font-weight:800;">알람</div>
+            <div style="font-size:9.5px; color:{c['text_sub']}; margin-top:2px; font-weight:800;">알람</div>
         </a>
         """,
         unsafe_allow_html=True,
@@ -352,35 +353,35 @@ st.markdown(
 )
 
 # -------------------------------------------------------------------
-# 6. 하단 편의 서비스 (모바일 한 화면에 3개 다 들어오는 3열 그리드)
+# 6. 하단 편의 서비스 (정사각형 1:1 버튼 & 선명한 글씨)
 # -------------------------------------------------------------------
-st.markdown(f"<p style='margin-top:14px; margin-bottom:8px; font-size:12.5px; font-weight:800; color:{c['text_sub']} !important;'>KIOST 편의 서비스</p>", unsafe_allow_html=True)
+st.markdown(f"<div style='margin-top:16px; margin-bottom:8px; font-size:14px; font-weight:800; color:{c['text_sub']};'>KIOST 편의 서비스</div>", unsafe_allow_html=True)
 
 btn_c1, btn_c2, btn_c3 = st.columns(3)
 
 with btn_c1:
     st.markdown('<div class="square-btn">', unsafe_allow_html=True)
-    if st.button("⏰\n\n근무 계산", key="btn_work", use_container_width=True):
+    if st.button("⏰\n근무 계산", key="btn_work", use_container_width=True):
         st.session_state.active_modal = "work" if st.session_state.active_modal != "work" else None
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
 with btn_c2:
     st.markdown('<div class="square-btn">', unsafe_allow_html=True)
-    if st.button("🍽️\n\n근처 맛집", key="btn_res", use_container_width=True):
+    if st.button("🍽️\n근처 맛집", key="btn_res", use_container_width=True):
         st.session_state.active_modal = "res" if st.session_state.active_modal != "res" else None
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
 with btn_c3:
     st.markdown('<div class="square-btn">', unsafe_allow_html=True)
-    if st.button("🍱\n\n구내 식당", key="btn_diet", use_container_width=True):
+    if st.button("🍱\n구내 식당", key="btn_diet", use_container_width=True):
         st.session_state.active_modal = "diet" if st.session_state.active_modal != "diet" else None
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
 # -------------------------------------------------------------------
-# 7. 팝업 레이어
+# 7. 팝업 레이어 (오버레이 컨테이너)
 # -------------------------------------------------------------------
 if st.session_state.active_modal:
     st.markdown('<div class="popup-box">', unsafe_allow_html=True)
@@ -393,12 +394,12 @@ if st.session_state.active_modal:
     # 1) 근무 계산기
     if st.session_state.active_modal == "work":
         with t_col:
-            st.markdown(f"<h4 style='margin:0; font-size:16px; color:{c['text_main']} !important; font-weight:800;'>⏰ 주 40시간 칼퇴 계산기</h4>", unsafe_allow_html=True)
-        st.markdown(f"<p style='font-size:12px; color:{c['text_sub']} !important; font-weight:700;'>목요일 누적 시간 입력 시 금요일 퇴근 시각 계산</p>", unsafe_allow_html=True)
+            st.markdown(f"<div style='font-size:16px; font-weight:800; color:{c['text_main']};'>⏰ 주 40시간 칼퇴 계산기</div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='font-size:13px; color:{c['text_sub']}; font-weight:600; margin-bottom:8px;'>목요일까지 누적 시간을 입력하면 금요일 퇴근 시각을 계산합니다.</div>", unsafe_allow_html=True)
         
         c1, c2 = st.columns(2)
         with c1:
-            prev_hours = st.number_input("목요일까지 누적(시)", min_value=0, max_value=40, value=32, step=1)
+            prev_hours = st.number_input("목요일까지 누적(시간)", min_value=0, max_value=40, value=32, step=1)
         with c2:
             prev_minutes = st.number_input("누적(분)", min_value=0, max_value=59, value=0, step=5)
 
@@ -418,9 +419,9 @@ if st.session_state.active_modal:
                 remain_h, remain_m = divmod(remain_work_minutes, 60)
                 st.info(f"오늘 채울 순 근무시간: **{remain_h}시간 {remain_m}분**")
                 st.markdown(
-                    f"<div style='text-align:center; padding:10px; background:{c['card_sub']}; border-radius:12px; border:2px solid {c['accent']}; margin-top:6px;'>"
-                    f"<span style='font-size:11.5px; color:{c['text_sub']} !important; font-weight:800;'>금요일 퇴근 가능 시간</span><br>"
-                    f"<b style='font-size:26px; color:{c['accent']} !important; font-weight:900;'>{leave_dt.strftime('%H:%M')}</b>"
+                    f"<div style='text-align:center; padding:12px; background:{c['card_sub']}; border-radius:14px; border:2px solid {c['accent']}; margin-top:8px;'>"
+                    f"<span style='font-size:13px; color:{c['text_sub']}; font-weight:800;'>금요일 퇴근 가능 시간</span><br>"
+                    f"<b style='font-size:28px; color:{c['accent']}; font-weight:900;'>{leave_dt.strftime('%H:%M')}</b>"
                     f"</div>",
                     unsafe_allow_html=True
                 )
@@ -428,7 +429,7 @@ if st.session_state.active_modal:
     # 2) 맛집 리스트
     elif st.session_state.active_modal == "res":
         with t_col:
-            st.markdown(f"<h4 style='margin:0; font-size:16px; color:{c['text_main']} !important; font-weight:800;'>🍽️ KIOST 근처 맛집</h4>", unsafe_allow_html=True)
+            st.markdown(f"<div style='font-size:16px; font-weight:800; color:{c['text_main']};'>🍽️ KIOST 근처 맛집</div>", unsafe_allow_html=True)
         restaurants = [
             {"name": "소담 한식뷔페", "category": "한식", "rating": "⭐ 4.8", "dist": "도보 3분", "menu": "제육볶음, 된장찌개"},
             {"name": "동화루 중화요리", "category": "중식", "rating": "⭐ 4.5", "dist": "도보 5분", "menu": "짬뽕, 간짜장, 탕수육"},
@@ -442,12 +443,12 @@ if st.session_state.active_modal:
         for item in [r for r in restaurants if selected_cat == "전체" or r["category"] == selected_cat]:
             st.markdown(
                 f"""
-                <div style="background:{c['card_sub']}; padding:8px 10px; border-radius:10px; border:1px solid {c['border']}; margin-top:5px;">
+                <div style="background:{c['card_sub']}; padding:10px 12px; border-radius:12px; border:1px solid {c['border']}; margin-top:6px;">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <b style="font-size:13.5px; color:{c['text_main']} !important; font-weight:800;">{item['name']}</b>
-                        <span style="font-size:11.5px; color:{c['accent']} !important; font-weight:800;">{item['rating']}</span>
+                        <b style="font-size:14.5px; color:{c['text_main']}; font-weight:800;">{item['name']}</b>
+                        <span style="font-size:13px; color:{c['accent']}; font-weight:800;">{item['rating']}</span>
                     </div>
-                    <div style="font-size:11.5px; color:{c['text_sub']} !important; margin-top:2px; font-weight:600;">
+                    <div style="font-size:12.5px; color:{c['text_sub']}; margin-top:3px; font-weight:600;">
                         {item['dist']} · {item['menu']}
                     </div>
                 </div>
@@ -463,8 +464,8 @@ if st.session_state.active_modal:
         today_date_slash = now_kst.strftime("%Y/%m/%d")
 
         with t_col:
-            st.markdown(f"<h4 style='margin:0; font-size:16px; color:{c['text_main']} !important; font-weight:800;'>🍱 오늘 구내식당 점심</h4>", unsafe_allow_html=True)
-        st.markdown(f"<p style='font-size:12px; color:{c['text_sub']} !important; font-weight:800;'>📅 {now_kst.strftime('%m월 %d일')} ({today_day_str}) 11:30~13:00</p>", unsafe_allow_html=True)
+            st.markdown(f"<div style='font-size:16px; font-weight:800; color:{c['text_main']};'>🍱 오늘 구내식당 점심</div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='font-size:13px; color:{c['text_sub']}; font-weight:800; margin-bottom:8px;'>📅 {now_kst.strftime('%m월 %d일')} ({today_day_str}) 11:30~13:00</div>", unsafe_allow_html=True)
 
         diet_list = fetch_diet_data()
 
@@ -490,16 +491,16 @@ if st.session_state.active_modal:
                         sub_dishes = dishes[1:] if len(dishes) > 1 else []
 
                         grid_html = f"""
-                        <div style="background:{c['card_sub']}; border:1.5px solid {c['border']}; border-radius:14px; padding:10px; margin-top:6px;">
-                            <div style="background:{c['card_bg']}; border:1.5px solid {c['accent']}; border-radius:8px; padding:8px; text-align:center; font-weight:800; color:{c['accent']} !important; font-size:13.5px; margin-bottom:6px;">
+                        <div style="background:{c['card_sub']}; border:1.5px solid {c['border']}; border-radius:16px; padding:12px; margin-top:8px;">
+                            <div style="background:{c['card_bg']}; border:1.5px solid {c['accent']}; border-radius:10px; padding:10px; text-align:center; font-weight:800; color:{c['accent']}; font-size:15px; margin-bottom:8px;">
                                 🍲 {main_dish}
                             </div>
-                            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px;">
+                            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px;">
                         """
                         for dish in sub_dishes:
-                            grid_html += f"""<div style="background:{c['card_bg']}; border-radius:6px; padding:6px; text-align:center; font-size:11.5px; color:{c['text_main']} !important; border:1px solid {c['border']}; font-weight:700;">🥢 {dish}</div>"""
+                            grid_html += f"""<div style="background:{c['card_bg']}; border-radius:8px; padding:8px; text-align:center; font-size:13px; color:{c['text_main']}; border:1px solid {c['border']}; font-weight:700;">🥢 {dish}</div>"""
                         if dessert and dessert not in ["-", "nan"]:
-                            grid_html += f"""<div style="grid-column: span 2; background:#FFF7ED; border-radius:6px; padding:6px; text-align:center; font-size:11.5px; color:#C2410C !important; border:1.5px solid #FDBA74; font-weight:800;">🍦 후식: {dessert}</div>"""
+                            grid_html += f"""<div style="grid-column: span 2; background:#FFF7ED; border-radius:8px; padding:8px; text-align:center; font-size:13px; color:#C2410C; border:1.5px solid #FDBA74; font-weight:800;">🍦 후식: {dessert}</div>"""
                         grid_html += "</div></div>"
                         st.markdown(grid_html, unsafe_allow_html=True)
 
