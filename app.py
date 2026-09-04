@@ -71,17 +71,18 @@ mobile_css = f"""
         background-color: {c['bg_app']} !important;
         color: {c['text_main']} !important;
         font-family: 'Noto Sans KR', sans-serif;
+        overflow-x: hidden !important; /* 가로 스크롤 원천 차단 */
     }}
     
-    /* 📱 모바일 전용 컨테이너 너비 및 패딩 */
     .main .block-container {{
-        max-width: 100% !important;
+        max-width: 430px !important;
         width: 100% !important;
         padding-top: 0.8rem !important;
         padding-bottom: 2rem !important;
-        padding-left: 12px !important;
-        padding-right: 12px !important;
+        padding-left: 14px !important;
+        padding-right: 14px !important;
         margin: 0 auto;
+        box-sizing: border-box !important;
     }}
     footer {{ visibility: hidden !important; height: 0px !important; }}
 
@@ -89,7 +90,6 @@ mobile_css = f"""
         color: {c['text_main']} !important;
     }}
 
-    /* 테마 라디오 토글 */
     div[data-testid="stRadio"] label p {{
         color: {c['text_main']} !important;
         font-weight: 800 !important;
@@ -103,7 +103,8 @@ mobile_css = f"""
         border-radius: 20px;
         padding: 16px 12px 14px;
         margin: 8px auto;
-        max-width: 100%;
+        width: 100%;
+        box-sizing: border-box;
         text-align: center;
         box-shadow: {c['shadow']};
     }}
@@ -135,30 +136,31 @@ mobile_css = f"""
         border: 2px solid;
     }}
 
-    /* 📱 모바일 3개 버튼 가로 강제 유지 & 완벽한 정사각형 (1:1 Aspect Ratio) */
-    div[data-testid="stHorizontalBlock"]:has(.mobile-square-box) {{
-        display: flex !important;
-        flex-direction: row !important;
-        flex-wrap: nowrap !important;
+    /* 📱 모바일 가로 밀림 완벽 해결: 순수 CSS 3열 그리드 강제 */
+    div[data-testid="stHorizontalBlock"] {{
+        display: grid !important;
+        grid-template-columns: 1fr 1fr 1fr !important;
         gap: 8px !important;
         width: 100% !important;
-    }}
-    div[data-testid="stHorizontalBlock"]:has(.mobile-square-box) > div[data-testid="column"] {{
-        flex: 1 1 0px !important;
         min-width: 0 !important;
+    }}
+    div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {{
+        width: 100% !important;
+        min-width: 0 !important;
+        flex: unset !important;
         padding: 0 !important;
     }}
 
-    .mobile-square-box {{
+    /* 정사각형 버튼 스타일 */
+    .square-btn {{
         width: 100% !important;
         aspect-ratio: 1 / 1 !important;
-        position: relative !important;
     }}
-    .mobile-square-box .stButton {{
+    .square-btn .stButton {{
         width: 100% !important;
         height: 100% !important;
     }}
-    .mobile-square-box .stButton > button {{
+    .square-btn .stButton > button {{
         width: 100% !important;
         height: 100% !important;
         aspect-ratio: 1 / 1 !important;
@@ -173,13 +175,13 @@ mobile_css = f"""
         box-shadow: {c['shadow']} !important;
         transition: transform 0.1s ease !important;
     }}
-    .mobile-square-box .stButton > button:active {{
+    .square-btn .stButton > button:active {{
         transform: scale(0.94);
     }}
-    .mobile-square-box .stButton > button p {{
+    .square-btn .stButton > button p {{
         color: {c['accent']} !important;
         font-weight: 900 !important;
-        font-size: 12px !important;
+        font-size: 12.5px !important;
         line-height: 1.25 !important;
         margin: 0 !important;
         text-align: center !important;
@@ -297,7 +299,7 @@ mug_svg = (
 )
 
 # -------------------------------------------------------------------
-# 4. 상단 모바일 컴팩트 헤더
+# 4. 상단 모바일 헤더
 # -------------------------------------------------------------------
 h_col1, h_col2, h_col3 = st.columns([5.2, 3.8, 1.0])
 
@@ -350,28 +352,28 @@ st.markdown(
 )
 
 # -------------------------------------------------------------------
-# 6. 하단 편의 서비스 (모바일 완벽 1:1 정사각형 버튼)
+# 6. 하단 편의 서비스 (모바일 한 화면에 3개 다 들어오는 3열 그리드)
 # -------------------------------------------------------------------
 st.markdown(f"<p style='margin-top:14px; margin-bottom:8px; font-size:12.5px; font-weight:800; color:{c['text_sub']} !important;'>KIOST 편의 서비스</p>", unsafe_allow_html=True)
 
 btn_c1, btn_c2, btn_c3 = st.columns(3)
 
 with btn_c1:
-    st.markdown('<div class="mobile-square-box">', unsafe_allow_html=True)
+    st.markdown('<div class="square-btn">', unsafe_allow_html=True)
     if st.button("⏰\n\n근무 계산", key="btn_work", use_container_width=True):
         st.session_state.active_modal = "work" if st.session_state.active_modal != "work" else None
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
 with btn_c2:
-    st.markdown('<div class="mobile-square-box">', unsafe_allow_html=True)
+    st.markdown('<div class="square-btn">', unsafe_allow_html=True)
     if st.button("🍽️\n\n근처 맛집", key="btn_res", use_container_width=True):
         st.session_state.active_modal = "res" if st.session_state.active_modal != "res" else None
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
 with btn_c3:
-    st.markdown('<div class="mobile-square-box">', unsafe_allow_html=True)
+    st.markdown('<div class="square-btn">', unsafe_allow_html=True)
     if st.button("🍱\n\n구내 식당", key="btn_diet", use_container_width=True):
         st.session_state.active_modal = "diet" if st.session_state.active_modal != "diet" else None
         st.rerun()
@@ -497,7 +499,7 @@ if st.session_state.active_modal:
                         for dish in sub_dishes:
                             grid_html += f"""<div style="background:{c['card_bg']}; border-radius:6px; padding:6px; text-align:center; font-size:11.5px; color:{c['text_main']} !important; border:1px solid {c['border']}; font-weight:700;">🥢 {dish}</div>"""
                         if dessert and dessert not in ["-", "nan"]:
-                            grid_html += f"""<div style="grid-column: span 2; background:#FFF7ED; border-radius:6px; padding:6px; text-align:center; font-size:11.5px; color:#C2410C !important; border:1px solid #FDBA74; font-weight:800;">🍦 후식: {dessert}</div>"""
+                            grid_html += f"""<div style="grid-column: span 2; background:#FFF7ED; border-radius:6px; padding:6px; text-align:center; font-size:11.5px; color:#C2410C !important; border:1.5px solid #FDBA74; font-weight:800;">🍦 후식: {dessert}</div>"""
                         grid_html += "</div></div>"
                         st.markdown(grid_html, unsafe_allow_html=True)
 
